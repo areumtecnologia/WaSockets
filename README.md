@@ -479,6 +479,19 @@ suki.ev.on("messages.update", async (chatUpdate) => {
 })
 ```
 
+### Decrypt Event Response
+
+- By default event response are encrypted and handled in `messages.update`
+```ts
+import { jidNormalizedUser, getAggregateResponsesInEventMessage } from '@itsukichan/baileys'
+
+suki.ev.on("messages.update", async ([chatUpdate]) => {
+    const eventResponses = chatUpdate.update?.eventResponses
+    const agregate = getAggregateResponsesInEventMessage({ eventResponses }, jidNormalizedUser(suki.user.lid)) 
+    console.log(agregate) 
+})
+```
+
 ### Summary of Events on First Connection
 
 1. When you connect first time, `connection.update` will be fired requesting you to restart sock
