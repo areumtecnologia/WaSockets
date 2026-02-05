@@ -1,7 +1,7 @@
 {
-  "name": "@itsukichan/baileys",
+  "name": "@areumtecnologia/wasockets",
   "version": "7.3.2",
-  "description": "WhatsApp API Modification By Itsukichann",
+  "description": "WhatsApp API Modification By areumtecnologia",
   "keywords": [
     "whatsapp",
     "js-whatsapp",
@@ -12,13 +12,13 @@
     "automation",
     "multi-device"
   ],
-  "homepage": "https://github.com/Itsukichann/Baileys",
+  "homepage": "https://github.com/areumtecnologia/WaSockets",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/Itsukichann/Baileys.git"
+    "url": "git+ssh://git@github.com/areumtecnologia/WaSockets.git"
   },
   "license": "MIT",
-  "author": "Itsukichann",
+  "author": "areumtecnologia",
 
   "main": "lib/index.js",
   "files": [
@@ -100,6 +100,6 @@
   },
 
   "bugs": {
-    "url": "https://github.com/Itsukichann/Baileys/issues"
+    "url": "https://github.com/areumtecnologia/WaSockets/issues"
   }
 }
