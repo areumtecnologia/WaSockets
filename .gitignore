@@ -1,4 +1,5 @@
 tests/
+auth_info_baileys/
 .env
 .code-workspace
 node_modules
