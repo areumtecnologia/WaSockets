@@ -1,2 +1,5 @@
-/tests
+tests/
 .env
+.code-workspace
+node_modules
+WaSockets.code-workspace

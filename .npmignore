@@ -1,2 +1,3 @@
-/tests
+tests/
 .env
+.code-workspace
