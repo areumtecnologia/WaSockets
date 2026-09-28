@@ -543,6 +543,46 @@ await sock.chatModify({ pin: true }, jid)
 
 ---
 
+## 🏷️ Etiquetas de Negócio (Labels - WhatsApp Business)
+
+O **WaSockets** permite que você gerencie etiquetas e organize contatos ou mensagens diretamente pelo aplicativo WhatsApp Business.
+
+### Criando, Editando e Deletando Etiquetas (CRUD de Sistema)
+
+Você pode criar, editar e excluir as etiquetas globais da sua conta:
+
+```javascript
+// Criar uma nova etiqueta com cor específica
+// Cores suportadas: de 0 a 19 correspondentes à paleta do WhatsApp Business
+const novaLabel = await sock.createLabel('Lead Qualificado', 5)
+
+// Atualizar o nome e a cor de uma etiqueta existente
+await sock.updateLabel('label_id_123', 'Pagamento Aprovado', 2)
+
+// Deletar uma etiqueta definitivamente da conta
+await sock.deleteLabel('label_id_123')
+```
+
+### Associando Etiquetas a Conversas e Mensagens
+
+Para categorizar chats específicos ou marcar mensagens individuais dentro de uma conversa:
+
+```javascript
+// Associar etiqueta a uma conversa (JID)
+await sock.addChatLabel(jid, 'label_id_123')
+
+// Remover etiqueta de uma conversa (JID)
+await sock.removeChatLabel(jid, 'label_id_123')
+
+// Associar etiqueta a uma mensagem específica
+await sock.addMessageLabel(jid, 'mensagem_id_456', 'label_id_123')
+
+// Remover etiqueta de uma mensagem específica
+await sock.removeMessageLabel(jid, 'mensagem_id_456', 'label_id_123')
+```
+
+---
+
 ## 👥 Gerenciamento de Grupos
 
 As operações de alteração estrutural em grupos requerem que a conta conectada seja administradora do grupo correspondente.
@@ -580,6 +620,30 @@ console.log(`Título: ${metadados.subject}, Membros: ${metadados.participants.le
 
 ---
 
+## 👥 Etiquetas de Membro (Member Tags) em Grupos
+
+O WhatsApp permite que os participantes de um grupo criem um rótulo ou descrição curta de até 30 caracteres para si mesmos (ex: definir seu papel ou cargo no grupo).
+
+### Definindo sua própria Etiqueta de Membro no Grupo
+
+```javascript
+// Define a sua etiqueta como "Suporte Técnico" no grupo especificado
+await sock.updateMemberLabel(grupoJid, "Suporte Técnico")
+```
+
+### Monitorando Atualizações de Etiquetas de Outros Membros
+
+Você pode escutar o evento `group.member-tag.update` para monitorar quando qualquer participante alterar a etiqueta de membro dele no grupo:
+
+```javascript
+sock.ev.on('group.member-tag.update', (update) => {
+    const { groupId, label, participant } = update
+    console.log(`O usuário ${participant} definiu a etiqueta "${label}" no grupo ${groupId}`)
+})
+```
+
+---
+
 ## 📢 Newsletters (Canais)
 
 O **WaSockets** traz suporte avançado para a criação e monitoramento de Newsletters (Canais de Transmissão públicos do WhatsApp).
@@ -604,6 +668,86 @@ await sock.newsletterUnfollow(canal.id)
 // Silenciar / Ativar notificações de um canal
 await sock.newsletterMute(canal.id)
 await sock.newsletterUnmute(canal.id)
+```
+
+---
+
+## 💼 WhatsApp Business (Catálogo, Produtos e Perfil Comercial)
+
+Caso a conta conectada seja comercial (WhatsApp Business), o **WaSockets** oferece suporte para interagir com o catálogo de produtos, obter detalhes de pedidos e gerenciar o perfil público e as mídias da empresa.
+
+### Gerenciamento de Perfil e Capa Comercial
+
+Você pode atualizar dados públicos de endereço, e-mail, descrição, websites, horários de funcionamento e foto de capa:
+
+```javascript
+// Atualizar o perfil comercial do usuário
+await sock.updateBussinesProfile({
+    address: 'Av. Paulista, 1000 - São Paulo, SP',
+    email: 'contato@suaempresa.com.br',
+    description: 'Empresa especializada em soluções de tecnologia.',
+    websites: ['https://suaempresa.com.br', 'https://blog.suaempresa.com.br'],
+    hours: {
+        timezone: 'America/Sao_Paulo',
+        days: [
+            { day: '1', mode: 'open_24_h' }, // Segunda-feira (1=Segunda, 7=Domingo)
+            { 
+                day: '2', 
+                mode: 'specific_hours', 
+                openTimeInMinutes: 540,  // 09:00 (9h * 60)
+                closeTimeInMinutes: 1080 // 18:00 (18h * 60)
+            }
+        ]
+    }
+})
+
+// Atualizar ou definir a foto de capa comercial
+const coverPhotoId = await sock.updateCoverPhoto('./capa_empresa.jpg')
+
+// Remover a foto de capa atual
+await sock.removeCoverPhoto(coverPhotoId)
+```
+
+### Consulta de Catálogo, Coleções e Pedidos
+
+```javascript
+// Obter a lista de produtos do catálogo de um contato (ou do seu próprio)
+const catalogo = await sock.getCatalog({
+    jid: '5511999999999@s.whatsapp.net',
+    limit: 15
+})
+console.log('Produtos:', catalogo.products)
+
+// Obter as coleções de produtos organizadas do catálogo
+const colecoes = await sock.getCollections('5511999999999@s.whatsapp.net', 10)
+
+// Obter os detalhes completos de um pedido comercial a partir do ID e do Token da mensagem de carrinho
+const detalhesPedido = await sock.getOrderDetails('ID_DO_PEDIDO', 'TOKEN_DO_PEDIDO')
+console.log('Itens do Pedido:', detalhesPedido.items)
+```
+
+### Cadastro e Modificação de Produtos no Catálogo
+
+```javascript
+// Adicionar um novo produto no catálogo
+const novoProduto = await sock.productCreate({
+    name: 'Caneca Personalizada WaSockets',
+    description: 'Caneca de cerâmica de alta qualidade.',
+    price: 4990, // R$ 49,90 (valor representado sem decimais, multiplicado por 100)
+    currency: 'BRL',
+    isHidden: false,
+    image: { url: './caneca.jpg' } // Caminho local, buffer ou stream
+})
+console.log('Produto Criado com ID:', novoProduto.id)
+
+// Atualizar dados de um produto existente
+await sock.productUpdate(novoProduto.id, {
+    name: 'Caneca Personalizada WaSockets (Edição Especial)',
+    price: 5990
+})
+
+// Remover produtos do catálogo (aceita um array de IDs de produtos)
+await sock.productDelete([novoProduto.id])
 ```
 
 ---
