@@ -30,6 +30,12 @@ O **WaSockets** foi criado para resolver problemas crônicos de estabilidade e a
 | **Mídia** | Correções de Miniaturas e Status | Correção de falhas na extração de miniaturas (`extractImageThumb`), na geração de previews de links, no envio de mídias em álbuns/vídeos e na publicação de mídias em status de grupos. |
 | **Newsletters (Canais)** | Consulta de Canais Inscritos | Adicionado o método exclusivo `newsletterSubscribed` que lista todos os canais de transmissão (Newsletters) aos quais o usuário está inscrito. |
 | **Mensagens de Negócios** | Botões Interativos & PIX | Suporte avançado para layouts de botões interativos, botões Cards (com imagem/vídeo), suporte para botões PIX estáticos e fluxos completos de checkout e pagamento (`review_and_pay`). |
+| **Recursos Web (v1.1.6)** | Fixação com Duração | Fixação de mensagens com durações configuráveis (24h, 7d, 30d) usando `pinInChatMessage` e `messageAddOnDurationInSecs`. |
+| **Recursos Web (v1.1.6)** | Reação a Status | Método nativo `reactToStatus` para curtir e reagir diretamente a publicações de Status. |
+| **Recursos Web (v1.1.6)** | Eventos & RSVP | Criação, cancelamento (`cancelEvent`) e confirmação de presença (`sendEventResponse`) em eventos de grupo. |
+| **Recursos Web (v1.1.6)** | Favoritos & Notas de Contato | Sincronização via App State de chats favoritos (`updateFavorite`) e anotações internas de contatos (`updateChatNote`). |
+| **Recursos Web (v1.1.6)** | Chamadas Web (Web Calling) | Sinalização completa de chamadas no navegador (`offerCall`, `acceptCall`, `terminateCall`, `rejectCall`). |
+| **Recursos Web (v1.1.6)** | Resolução Reversa de LID | Consulta reversa USync para obter o número de telefone a partir de um identificador `@lid` (`getPnUser`). |
 
 ---
 
@@ -52,8 +58,14 @@ O **WaSockets** foi criado para resolver problemas crônicos de estabilidade e a
   - [Botões Interativos](#botões-interativos)
   - [Botão de Pagamento PIX](#botão-de-pagamento-pix)
   - [Fluxos de Checkout (PAY)](#fluxos-de-checkout-pay)
-  - [Menção em Status](#menção-em-status)
+  - [Menção em Status e Reações](#menção-em-status-e-reações)
+  - [Comentários em Canais e Comunidades](#comentários-em-canais-e-comunidades)
 - [Modificando Mensagens e Chats](#-modificando-mensagens-e-chats)
+  - [Fixação de Mensagens com Duração](#fixação-de-mensagens-com-duração)
+  - [Favoritos e Anotações de Contato](#favoritos-e-anotações-de-contato)
+- [Eventos em Grupos e RSVP](#-eventos-em-grupos-e-rsvp)
+- [Chamadas Web (Web Calling)](#-chamadas-web-web-calling)
+- [Resolução de Usuários (LID e Telefone)](#-resolução-de-usuários-lid-e-telefone)
 - [Gerenciamento de Grupos](#-gerenciamento-de-grupos)
 - [Newsletters (Canais)](#-newsletters-canais)
 - [Configurações de Privacidade](#-configurações-de-privacidade)
@@ -508,6 +520,22 @@ await sock.sendStatusMentions(
     },
     contatosParaMencionar
 )
+
+// Curtir / Reagir diretamente a uma publicação de Status (Stories)
+await sock.reactToStatus(statusMsgKey, '❤️')
+```
+
+### Comentários em Canais e Comunidades
+
+Envie respostas e comentários estruturados em postagens de canais (Newsletters) ou mensagens de aviso em comunidades:
+
+```javascript
+await sock.sendMessage(jid, {
+    comment: {
+        targetMessageKey: mensagemOriginal.key,
+        message: { text: 'Excelente atualização! 👏' }
+    }
+})
 ```
 
 ---
@@ -537,8 +565,112 @@ await sock.chatModify({ mute: null }, jid)
 // Marcar chat como Não Lido
 await sock.chatModify({ markRead: false, lastMessages: [msg] }, jid)
 
-// Fixar chat na lista
+// Fixar chat na lista de conversas
 await sock.chatModify({ pin: true }, jid)
+```
+
+### Fixação de Mensagens com Duração
+
+Fixe mensagens em conversas individuais ou grupos escolhendo a duração desejada:
+
+```javascript
+// Fixar mensagem por 7 dias (604800 segundos)
+// Durações padrão: 86400 (24h), 604800 (7 dias), 2592000 (30 dias)
+await sock.sendMessage(jid, {
+    pin: {
+        key: msg.key,
+        type: 1, // 1: Fixar, 2: Desafixar
+        time: 604800
+    }
+})
+
+// Desafixar mensagem
+await sock.sendMessage(jid, {
+    pin: {
+        key: msg.key,
+        type: 2
+    }
+})
+```
+
+### Favoritos e Anotações de Contato
+
+Organize suas conversas sincronizando com o WhatsApp Web e celular:
+
+```javascript
+// Marcar conversa como Favorita
+await sock.updateFavorite(jid, true)
+
+// Desmarcar conversa como Favorita
+await sock.updateFavorite(jid, false)
+
+// Adicionar ou atualizar nota interna no contato (Chat Note)
+await sock.updateChatNote(jid, 'Cliente solicitou proposta para 50 atendentes.')
+
+// Remover nota interna do contato
+await sock.removeChatNote(jid)
+```
+
+---
+
+## 📅 Eventos em Grupos e RSVP
+
+Crie eventos colaborativos, responda confirmações de presença e cancele eventos:
+
+```javascript
+// 1. Criar um novo evento no grupo
+const evento = await sock.sendMessage(grupoJid, {
+    event: {
+        name: 'Reunião de Planejamento de Sprints',
+        description: 'Alinhamento estratégico dos projetos da Áreum Tecnologia.',
+        startTime: Math.floor(Date.now() / 1000) + 86400, // Amanhã
+        extraGuestsAllowed: true
+    }
+})
+
+// 2. Responder ao Evento (RSVP)
+// Tipos de resposta: 'GOING' (1), 'NOT_GOING' (2), 'MAYBE' (3)
+await sock.sendEventResponse(grupoJid, evento.key, 'GOING', 1 /* +1 convidado extra */)
+
+// 3. Cancelar o Evento
+await sock.cancelEvent(grupoJid, evento.key)
+```
+
+---
+
+## 📞 Chamadas Web (Web Calling)
+
+Gerencie o ciclo completo de sinalização de chamadas de voz e vídeo:
+
+```javascript
+// Iniciar uma chamada (áudio ou vídeo)
+const chamada = await sock.offerCall('5511999999999@s.whatsapp.net', false /* isVideo */)
+console.log('ID da chamada:', chamada.id)
+
+// Atender uma chamada recebida
+await sock.acceptCall(callId, callerJid)
+
+// Encerrar uma chamada em andamento
+await sock.terminateCall(callId, callerJid)
+
+// Rejeitar uma chamada recebida
+await sock.rejectCall(callId, callerJid)
+```
+
+---
+
+## 🔍 Resolução de Usuários (LID e Telefone)
+
+Com a evolução da privacidade no WhatsApp, participantes de grupos e canais frequentemente utilizam identificadores `@lid`. O **WaSockets** permite resolução bidirecional:
+
+```javascript
+// Obter o identificador LID a partir de um número de telefone (PN)
+const [lidUser] = await sock.getLidUser('5511999999999@s.whatsapp.net')
+console.log('LID do usuário:', lidUser)
+
+// Obter o número de telefone a partir de um @lid recebido em grupo
+const [pnUser] = await sock.getPnUser('12345678901234@lid')
+console.log('Número de telefone real:', pnUser?.phone_number)
 ```
 
 ---
