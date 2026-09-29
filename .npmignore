@@ -1,3 +1,11 @@
 tests/
-.env
+auth_info_baileys/
+*.code-workspace
 .code-workspace
+.env
+.env.*
+.git/
+.github/
+.vscode/
+.idea/
+tsconfig.json
