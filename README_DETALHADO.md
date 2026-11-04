@@ -38,7 +38,7 @@ O **WaSockets** foi criado para resolver problemas crônicos de estabilidade e a
 | **Recursos Web (v1.1.6)** | Reação a Status | Método nativo `reactToStatus` para curtir e reagir diretamente a publicações de Status. |
 | **Recursos Web (v1.1.6)** | Eventos & RSVP | Criação, cancelamento (`cancelEvent`) e confirmação de presença (`sendEventResponse`) em eventos de grupo. |
 | **Recursos Web (v1.1.6)** | Favoritos & Notas de Contato | Sincronização via App State de chats favoritos (`updateFavorite`) e anotações internas de contatos (`updateChatNote`). |
-| **Motor VoIP Nativo & WebCalling** | Chamadas de Voz & Telemetria em Tempo Real | Motor VoIP completo integrado com WebAssembly (`whatsapp.wasm`), bypass de "Silenciar Desconhecidos" via Trusted Contact Token (`iq:privacy`), despertar de dispositivos via `presenceSubscribe`, áudio bidirecional (16kHz PCM/Opus), medidor DSP de volume e telemetria completa de ligação. |
+| **Motor VoIP Nativo & WebCalling** | Voz, Vídeo, Tela & Inbound VoIP | Motor VoIP unificado com WebAssembly (`whatsapp.wasm`), chamadas de voz e vídeo 1:1, atendimento de chamadas recebidas (`call.received` / `acceptCall`), compartilhamento de tela ao vivo (`startScreenShare`), bypass de erro 70004 com sanitização de device JIDs, bypass de "Silenciar Desconhecidos" via TC Token, despertador anti-doze, áudio bidirecional (16kHz PCM/Opus), detecção VAD e telemetria completa. |
 | **Recursos Web (v1.1.6)** | Sinalização de Chamadas Web | Sinalização completa de chamadas no navegador (`offerCall`, `acceptCall`, `terminateCall`, `rejectCall`). |
 | **Recursos Web (v1.1.6)** | Resolução Reversa de LID | Consulta reversa USync para obter o número de telefone a partir de um identificador `@lid` (`getPnUser`). |
 | **Transição LID (Pilar 2)** | Store Unificado (LID & PN) | `store.getContact(jid)` e `store.getChat(jid)` com indexação cruzada e resolução automática de apelidos LID/PN. |
@@ -407,7 +407,12 @@ client.on(Events.CALL_RECEIVED, async (call) => {
     // call.pushVideo(meuQuadroNv12Buffer, 320, 240);
     // call.pushVideoRgba(meuQuadroRgbaBuffer, 320, 240);
 
-    // 6. Streams legíveis (Node.js Readable Streams) e Gravação
+    // 6. Compartilhamento de Tela em tempo real durante a chamada
+    // call.startScreenShare({ fps: 15, width: 640, height: 360 });
+    // console.log('Transmitindo tela:', call.isSharingScreen);
+    // Para pausar/interromper o compartilhamento: call.stopScreenShare();
+
+    // 7. Streams legíveis (Node.js Readable Streams) e Gravação
     // const rxStream = call.getRxStream({ format: 'int16' });
     // const txStream = call.getTxStream({ format: 'int16' });
     // call.recordToFile('./gravacao.wav', { source: 'mixed', channels: 2 });
