@@ -187,6 +187,10 @@ export interface BaileysEventMap {
     'contacts.update': Partial<Contact>[]
     'group-participants.update': { id: string; author?: string; participants: string[]; action: 'add' | 'remove' | 'demote' | 'promote' }
     'call': WACallEvent[]
+    'call.created': { callId: string; to: string; isVideo?: boolean }
+    'call.ringing': { callId: string; to: string }
+    'call.connected': { callId: string; to: string; isVideo?: boolean }
+    'call.ended': { callId: string; to: string; reason: string }
     [key: string]: any
 }
 

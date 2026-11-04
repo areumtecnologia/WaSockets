@@ -6,6 +6,10 @@
 
 ---
 
+> 💡 **Nota:** Esta é a documentação padrão da biblioteca (mensagens, mídias, comunidades, canais, grupos, botões e gerenciamento de conta). Para a documentação completa com todos os recursos avançados incluindo **chamadas de áudio e vídeo em tempo real (VoIP nativo)**, consulte o [README_DETALHADO.md](./README_DETALHADO.md).
+
+---
+
 ### ⚠️ Nota Importante e Licença
 
 Esta biblioteca é uma modificação independente e não é de forma alguma afiliada, endossada ou associada ao WhatsApp ou à Meta Inc. O uso desta ferramenta é de sua inteira responsabilidade. Desencorajamos fortemente o uso para spam, envio em massa não solicitado ou qualquer prática que viole os Termos de Serviço do WhatsApp.
@@ -34,19 +38,31 @@ O **WaSockets** foi criado para resolver problemas crônicos de estabilidade e a
 | **Recursos Web (v1.1.6)** | Reação a Status | Método nativo `reactToStatus` para curtir e reagir diretamente a publicações de Status. |
 | **Recursos Web (v1.1.6)** | Eventos & RSVP | Criação, cancelamento (`cancelEvent`) e confirmação de presença (`sendEventResponse`) em eventos de grupo. |
 | **Recursos Web (v1.1.6)** | Favoritos & Notas de Contato | Sincronização via App State de chats favoritos (`updateFavorite`) e anotações internas de contatos (`updateChatNote`). |
-| **Recursos Web (v1.1.6)** | Chamadas Web (Web Calling) | Sinalização completa de chamadas no navegador (`offerCall`, `acceptCall`, `terminateCall`, `rejectCall`). |
 | **Recursos Web (v1.1.6)** | Resolução Reversa de LID | Consulta reversa USync para obter o número de telefone a partir de um identificador `@lid` (`getPnUser`). |
 | **Transição LID (Pilar 2)** | Store Unificado (LID & PN) | `store.getContact(jid)` e `store.getChat(jid)` com indexação cruzada e resolução automática de apelidos LID/PN. |
 | **Transição LID (Pilar 2)** | Roteamento & Resolução JID | Métodos `sock.toPn()`, `sock.toLid()`, `sock.resolveJid()` e auto-aprendizado de chaves no cache do Signal. |
 | **Multimídia & Canais (Pilar 3)** | Álbum Nativo & Waveforms | Envio de álbuns (`sendAlbumMessage`), ordenação indexada e suporte a waveforms PTT customizadas. |
 | **Multimídia & Canais (Pilar 3)** | Newsletters (Canais) v2 | Consulta de reações (`newsletterFetchReactions`), mensagens individuais (`newsletterFetchMessage`) e lista parseada. |
+| **Conectividade & Histórico** | Plataforma Nativa `WIN_HYBRID` | Substitui o `WIN32` depreciado pelo `WIN_HYBRID` nativo em `Browsers.windows('Desktop')`, eliminando o erro 428 e desbloqueando a sincronização de histórico completo (`syncFullHistory: true`). |
+| **Multimídia & ViewOnce** | Emulação de Browser Android | Introdução do preset `Browsers.android('Chrome')` permitindo à sessão receber mensagens e mídias de visualização única (*View Once*). |
+| **Alta Performance** | Cache WeakMap em Nós Binários | Indexação de tags filhas com `WeakMap` em `getBinaryNodeChildren` e `getBinaryNodeChild` gerando aceleração de até 30x no processamento de pacotes XML sem vazamento de memória. |
+| **Privacidade & Contatos** | TC Token Nesting em Fotos de Perfil | Aninhamento do nó `<tctoken>` diretamente na query `<picture>` para atender ao protocolo `profilePicPrivacyToken`, suportando busca em alta resolução (`image`) e miniatura (`preview`). |
 
 ---
 
 ## 📌 Índice
 
+- [🌟 Camada de Abstração de Alto Nível (WaClient) — Recomendado](#-camada-de-abstração-de-alto-nível-waclient--recomendado)
+  - [Por que usar o WaClient?](#por-que-usar-o-waclient)
+  - [Guia Rápido (Quick Start)](#guia-rápido-quick-start)
+  - [Eventos Semânticos](#eventos-semânticos)
+  - [O Contexto de Mensagem (MessageContext / ctx)](#o-contexto-de-mensagem-messagecontext--ctx)
+  - [Builders de Botões Interativos (InteractiveMessage)](#builders-de-botões-interativos-interactivemessage)
+  - [Controle de Presença Fluente (Typing / Recording)](#controle-de-presença-fluente-typing--recording)
+  - [Os 13 Submódulos Especializados](#os-13-submódulos-especializados)
+  - [Opções de Configuração (WaClientOptions)](#opções-de-configuração-waclientoptions)
 - [Instalação](#-instalação)
-- [Conectando a Conta](#-conectando-a-conta)
+- [API de Baixo Nível (makeWASocket Legado)](#-conectando-a-conta)
   - [Conexão via QR Code](#conexão-via-qr-code)
   - [Conexão via Código de Emparelhamento (Pairing Code)](#conexão-via-código-de-emparelhamento-pairing-code)
   - [Recebendo Histórico Completo](#recebendo-histórico-completo)
@@ -83,7 +99,6 @@ O **WaSockets** foi criado para resolver problemas crônicos de estabilidade e a
   - [Favoritos e Anotações de Contato](#favoritos-e-anotações-de-contato)
 - [Perfil do Usuário e Foto](#-perfil-do-usuário-e-foto)
 - [Eventos em Grupos e RSVP](#-eventos-em-grupos-e-rsvp)
-- [Chamadas Web (Web Calling)](#-chamadas-web-web-calling)
 - [Resolução de Usuários (LID e Telefone)](#-resolução-de-usuários--transição-lid-pilar-2)
 - [Etiquetas e Respostas Rápidas (WhatsApp Business)](#-etiquetas-de-negócio-labels---whatsapp-business)
 - [Gerenciamento de Grupos](#-gerenciamento-de-grupos)
@@ -114,6 +129,297 @@ yarn add github:areumtecnologia/WaSockets
 ```
 
 ---
+
+## 🌟 Camada de Abstração de Alto Nível (WaClient) — Recomendado
+
+> **Novo no WaSockets!** A classe `WaClient` é uma camada de abstração de alto nível que elimina mais de **85% do boilerplate** comum de integrações com WhatsApp. Ela gerencia automaticamente autenticação multi-arquivos, reconexões inteligentes, normalização instantânea de mensagens e mídias, oferece builders fluentes de botões interativos e divide todas as funcionalidades em **14 submódulos especializados**.
+
+### Por que usar o WaClient?
+
+| Recurso | `makeWASocket` (Baixo Nível) | `WaClient` (Alto Nível) |
+| :--- | :--- | :--- |
+| **Autenticação & Sessão** | Configurar `useMultiFileAuthState`, gerenciar pastas e `creds.update` manualmente. | **Automático:** apenas defina `sessionName` e o cliente gerencia tudo. |
+| **Reconexão** | Analisar códigos do `Boom`, verificar `DisconnectReason` e agendar timeouts. | **Automático:** reconexão inteligente em quedas transitórias sem loopings. |
+| **Tratamento de Mensagens** | Escutar `messages.upsert`, iterar arrays brutos, extrair nós Proto profundamente. | **`ctx` Enriquecido:** objeto limpo com `ctx.reply()`, `ctx.react()`, `ctx.delete()`, etc. |
+| **Download de Mídias** | Importar `downloadContentFromMessage`, gerenciar streams e conversão de Buffers. | **`MediaObject`:** métodos diretos `ctx.media.save()`, `toBase64()`, `toStream()`, `toSharp()`. |
+| **Botões Interativos & PIX** | Montar estruturas JSON aninhadas e complexas de `interactiveMessage`. | **Builders Fluentes:** `new InteractiveMessage().addButton(new PixButton(...))`. |
+| **Presença (Digitando)** | Disparar `sendPresenceUpdate` manual e lembrar de cancelar com timeout. | **Lifecycle Automático:** `const typing = client.startTyping(jid); ... typing.stop()`. |
+| **Validação de Destinatário** | Erros de envio quando número não existe no WhatsApp. | **`isOnWhatsApp` Embutido:** validação prévia transparente sem quebrar sua aplicação. |
+
+---
+
+### Guia Rápido (Quick Start)
+
+```javascript
+const { WaClient, Events } = require('@areumtecnologia/wasockets/client');
+
+// 1. Inicializa o cliente com configurações simplificadas
+const client = new WaClient({
+    sessionName: 'atendimento-sac',
+    dataPath: './sessions',
+    printQRInTerminal: true,
+    restartOnClose: true
+});
+
+// 2. Eventos Semânticos
+client.on(Events.CONNECTED, ({ user }) => {
+    console.log(`✓ Bot online com sucesso como: ${user.name} (${user.id})`);
+});
+
+// 3. Recepção de Mensagens com Contexto Enriquecido
+client.on(Events.MESSAGE_RECEIVED, async (ctx) => {
+    // Ignora mensagens do próprio bot
+    if (ctx.isFromMe) return;
+
+    console.log(`[${ctx.senderName}]: ${ctx.body}`);
+
+    // Resposta automática com citação
+    if (ctx.body === '!ping') {
+        await ctx.react('🏓');
+        return ctx.reply('Pong! 🚀');
+    }
+
+    // Se receber mídia (foto, áudio, vídeo, doc)
+    if (ctx.media) {
+        console.log(`Mídia recebida: ${ctx.media.mimetype} (${ctx.media.fileLength} bytes)`);
+        await ctx.media.save(`./downloads/${ctx.id}.${ctx.media.mimetype.split('/')[1]}`);
+        await ctx.reply('Arquivo salvo com sucesso!');
+    }
+});
+
+// 4. Inicia a conexão
+client.connect();
+```
+
+---
+
+### Eventos Semânticos
+
+A classe `WaClient` emite eventos limpos e intuitivos através do enum `Events`:
+
+```javascript
+const { Events } = require('@areumtecnologia/wasockets/client');
+
+client.on(Events.CONNECTED, ({ user }) => { /* Conexão estabelecida */ });
+client.on(Events.DISCONNECTED, ({ reason, willReconnect, error }) => { /* Queda de conexão */ });
+client.on(Events.QR_CODE, ({ qr, base64 }) => { /* QR code emitido (terminal ou base64 para frontend) */ });
+client.on(Events.PAIRING_CODE, ({ code }) => { /* Código de emparelhamento por telefone */ });
+client.on(Events.LOGGED_OUT, () => { /* Desconectado/revogado pelo celular */ });
+
+client.on(Events.MESSAGE_RECEIVED, async (ctx, rawMsg) => { /* Nova mensagem recebida */ });
+client.on(Events.MESSAGE_SENT, async (ctx, rawMsg) => { /* Mensagem enviada pelo bot */ });
+client.on(Events.MESSAGE_UPDATE, (updates) => { /* Edições de mensagem, apagadas ou confirmações */ });
+
+client.on(Events.GROUP_PARTICIPANTS_UPDATE, (update) => { /* Entrada, saída ou promoção em grupo */ });
+client.on(Events.PRESENCE_UPDATE, (presence) => { /* Usuário online, digitando ou offline */ });
+client.on(Events.CONTACTS_UPSERT, (contacts) => { /* Novos contatos sincronizados */ });
+client.on(Events.LABELS_UPDATE, (labels) => { /* Criação ou associação de etiquetas comerciais */ });
+```
+
+---
+
+### O Contexto de Mensagem (`MessageContext` / `ctx`)
+
+Ao escutar `Events.MESSAGE_RECEIVED`, você recebe um objeto `ctx` que já contém todos os dados mastigados e métodos de ação vinculados diretamente àquela mensagem:
+
+#### Propriedades de `ctx`:
+- `ctx.id`: ID único da mensagem.
+- `ctx.chatId`: JID do chat (usuário, grupo ou canal).
+- `ctx.sender`: JID de quem enviou.
+- `ctx.senderNumber`: Apenas os números de telefone do remetente (sem `@s.whatsapp.net`).
+- `ctx.senderName`: Nome formatado (nome salvo, apelido comercial ou pushName).
+- `ctx.isGroup`: Booleano indicando se é grupo (`@g.us`).
+- `ctx.isChannel`: Booleano indicando se é newsletter/canal (`@newsletter`).
+- `ctx.isFromMe`: Booleano se a mensagem foi enviada pelo próprio bot.
+- `ctx.body`: Texto principal da mensagem (já decodificado de texto, legenda, botão ou lista).
+- `ctx.type`: Tipo normalizado (`text`, `image`, `video`, `audio`, `document`, `sticker`, `poll`, etc.).
+- `ctx.media`: Instância de `MediaObject` (se houver mídia na mensagem).
+- `ctx.quoted`: Instância recursiva de `MessageContext` para a mensagem que foi citada/respondida.
+- `ctx.raw`: O nó bruto original do WhatsApp/Baileys para casos de baixo nível.
+
+#### Ações Disponíveis em `ctx`:
+```javascript
+// Responde citando a mensagem automaticamente
+await ctx.reply('Olá! Em que posso ajudar?');
+
+// Reage com emoji
+await ctx.react('👍');
+
+// Remove reação anterior
+await ctx.removeReaction();
+
+// Apaga a mensagem para todos no chat
+await ctx.delete();
+
+// Edita o texto da mensagem (quando enviada anteriormente pelo próprio bot)
+await ctx.edit('Texto corrigido');
+
+// Encaminha para outro destinatário
+await ctx.forward('5511999999999@s.whatsapp.net');
+
+// Marca a mensagem como lida (ticks azuis)
+await ctx.markRead();
+
+// Fixa a mensagem no topo da conversa (duração em segundos: 24h, 7d, 30d)
+await ctx.pin(86400);
+
+// Desafixa a mensagem
+await ctx.unpin();
+
+// Favorita ou desfavorita a mensagem com estrela
+await ctx.star();
+await ctx.unstar();
+```
+
+#### Utilitários de Mídia (`MediaObject`):
+Se a mensagem contiver imagem, vídeo, áudio ou documento, `ctx.media` fornece métodos instantâneos:
+
+```javascript
+if (ctx.media) {
+    // 1. Salva diretamente em disco
+    await ctx.media.save('./pasta/comprovante.pdf');
+
+    // 2. Converte para Base64 (ideal para enviar para APIs de IA ou frontend)
+    const base64 = ctx.media.toBase64();
+    const dataUri = ctx.media.toDataUri(); // 'data:image/jpeg;base64,...'
+
+    // 3. Obtém como Stream legível (Node Readable)
+    const stream = ctx.media.toStream();
+
+    // 4. Integração nativa com Sharp (se instalado) para redimensionamento/corte
+    const sharpInstance = ctx.media.toSharp();
+}
+```
+
+---
+
+### Builders de Botões Interativos (`InteractiveMessage`)
+
+Crie botões nativos de alta conversão para WhatsApp sem precisar montar árvores JSON complexas:
+
+```javascript
+const {
+    InteractiveMessage,
+    QuickReplyButton,
+    UrlButton,
+    CopyCodeButton,
+    CallButton,
+    PixButton,
+    ListButton,
+    ListSection,
+    ListRow
+} = require('@areumtecnologia/wasockets/client');
+
+// 1. Menu com Resposta Rápida, Link, Cupom e Chave PIX Estática
+const interactive = new InteractiveMessage()
+    .setTitle('Plano Pro - Áreum Tecnologia')
+    .setText('Escolha a forma de prosseguir com a sua assinatura:')
+    .setFooter('Pagamento seguro via WhatsApp')
+    .addButton(new QuickReplyButton('Ativar Teste Grátis', 'btn_trial'))
+    .addButton(new UrlButton('Ver Recursos', 'https://areumtecnologia.com.br'))
+    .addButton(new CopyCodeButton('Copiar Cupom 20%', 'DESCONTO20'))
+    .addButton(new CallButton('Ligar para o Suporte', '+5511999999999'))
+    .addButton(new PixButton('Pagar via PIX', '12345678900', 'CPF', 'Áreum Tecnologia'));
+
+await client.sendInteractive('5511999999999@s.whatsapp.net', interactive);
+
+// 2. Menu com Lista de Opções (Dropdown / Sections)
+const lista = new InteractiveMessage()
+    .setTitle('Cardápio Digital')
+    .setText('Selecione uma categoria de produtos:')
+    .addButton(new ListButton('Ver Cardápio', [
+        new ListSection('Bebidas', [
+            new ListRow('Suco de Laranja 500ml', 'R$ 9,90', 'item_suco'),
+            new ListRow('Refrigerante Lata', 'R$ 6,50', 'item_refri')
+        ]),
+        new ListSection('Pratos Principais', [
+            new ListRow('Hambúrguer Artesanal', 'Pão brioche, 180g blend', 'item_burger'),
+            new ListRow('Pizza Individual', 'Mussarela e tomate', 'item_pizza')
+        ])
+    ]));
+
+await client.sendInteractive('5511999999999@s.whatsapp.net', lista);
+```
+
+---
+
+### Controle de Presença Fluente (Typing / Recording)
+
+Indique que o bot está digitando ou gravando áudio de forma segura, com cancelamento automático ao enviar ou via objeto retornado:
+
+```javascript
+// Inicia estado digitando ('composing')
+const typing = client.startTyping(jid);
+
+// Realiza processamento pesado (ex: consulta LLM / banco de dados)
+await processarRequisicao();
+
+// Para a digitação manualmente
+await typing.stop();
+
+// Ou para gravação de áudio ('recording')
+const recording = client.startRecording(jid);
+await sintetizarVoz();
+await recording.stop();
+```
+
+---
+
+### Os 13 Submódulos Especializados
+
+O `WaClient` divide as operações em 13 módulos focados, acessíveis diretamente na instância:
+
+| Submódulo | Acesso | Descrição e Principais Métodos |
+| :--- | :--- | :--- |
+| **Mensagens** | `client.messages` | Envio inteligente com validação `isOnWhatsApp`, textos, mídias, álbuns (`sendAlbum`), enquetes (`sendPoll`), vCards (`sendContacts`), reações e encaminhamento. |
+| **Grupos** | `client.groups` | Criar grupos, adicionar/remover membros, promover/rebaixar admins, convites, permissões de grupo e menção em massa (`mentionAll`). |
+| **Canais / Newsletters** | `client.channels` | Criação e gestão de Newsletters v2, busca por código de convite ou JID, seguir, deixar de seguir, silenciar e buscar reações. |
+| **Privacidade** | `client.privacy` | Bloquear/desbloquear contatos, gerenciar lista de bloqueio (`getBlocklist`) e configurar privacidade de Visto por Último, Online, Foto e Recado. |
+| **Perfil** | `client.profile` | Atualizar nome de exibição (`updateName`), recado/status (`updateStatus`), foto de perfil (`updatePicture`) e obter foto em alta resolução. |
+| **Chats** | `client.chat` | Fixar conversas no topo (`pin`/`unpin`), silenciar (`mute`/`unmute`), arquivar (`archive`/`unarchive`), limpar e excluir histórico. |
+| **Presença** | `client.presence` | `startTyping()`, `startRecording()`, marcar conta como online/offline e assinar atualizações de presença de contatos específicos. |
+| **Status / Stories** | `client.stories` | Publicar Status em texto, imagem, áudio ou vídeo, com suporte a menções direcionadas (`statusJidList`) ou broadcast público. |
+| **WhatsApp Business** | `client.business` | Gestão de catálogo comercial, cadastro de produtos (`createProduct`), coleções, perfil da empresa e detalhes de pedidos (`getOrderDetails`). |
+| **Etiquetas / Labels** | `client.labels` | CRUD completo de etiquetas do WhatsApp Business, associação de etiquetas a chats e mensagens específicas. |
+| **Comunidades** | `client.communities` | Criação de comunidades, vinculação de subgrupos (`addSubgroups`), remoção e gestão do grupo de avisos gerais. |
+| **Usuários** | `client.users` | Verificação de existência no WhatsApp (`isOnWhatsApp`), metadados, busca de perfil comercial e resolução reversa de LID para PN (`getPnForLid`). |
+| **Contatos** | `client.contacts` | Cache unificado de contatos em memória com resolução profunda assíncrona de informações completas (`fetchDeep`). |
+
+---
+
+### Opções de Configuração (`WaClientOptions`)
+
+Ao instanciar `new WaClient(options)`, você pode customizar:
+
+```typescript
+interface WaClientOptions {
+    /** Nome da sessão (cria a pasta em dataPath/sessionName) - Padrão: 'default' */
+    sessionName?: string;
+    /** Diretório base de armazenamento das credenciais - Padrão: './sessions' */
+    dataPath?: string;
+    /** Auth state customizado (opcional, se desejar gerenciar externamente) */
+    auth?: { state: AuthenticationState; saveCreds: () => Promise<void> };
+    /** Número de telefone para iniciar autenticação por Pairing Code ao invés de QR */
+    phoneNumber?: string;
+    /** Imprimir QR Code formatado no terminal - Padrão: true */
+    printQRInTerminal?: boolean;
+    /** Reconectar automaticamente em quedas transitórias de rede - Padrão: true */
+    restartOnClose?: boolean;
+    /** Sincronizar histórico completo de mensagens antigas - Padrão: false */
+    syncFullHistory?: boolean;
+    /** Marcar a conta como online assim que conectar - Padrão: true */
+    markOnlineOnConnect?: boolean;
+    /** Sobrescrever ou adicionar opções do makeWASocket subjacente */
+    socketOptions?: any;
+    /** Logger customizado (compatível com Pino ou Console) */
+    logger?: any;
+}
+```
+
+---
+
+
+
 
 ## 🔑 Conectando a Conta
 
@@ -1005,27 +1311,6 @@ await sock.cancelEvent(grupoJid, evento.key)
 
 ---
 
-## 📞 Chamadas Web (Web Calling)
-
-Gerencie o ciclo completo de sinalização de chamadas de voz e vídeo:
-
-```javascript
-// Iniciar uma chamada (áudio ou vídeo)
-const chamada = await sock.offerCall('5511999999999@s.whatsapp.net', false /* isVideo */)
-console.log('ID da chamada:', chamada.id)
-
-// Atender uma chamada recebida
-await sock.acceptCall(callId, callerJid)
-
-// Encerrar uma chamada em andamento
-await sock.terminateCall(callId, callerJid)
-
-// Rejeitar uma chamada recebida
-await sock.rejectCall(callId, callerJid)
-```
-
----
-
 ## 🔍 Resolução de Usuários & Transição LID (Pilar 2)
 
 Com a evolução da privacidade no WhatsApp, participantes de grupos e canais frequentemente utilizam identificadores `@lid`. O **WaSockets** oferece um conjunto completo de ferramentas de alto desempenho com cache automático em memória e no banco de chaves Signal:
@@ -1604,10 +1889,6 @@ await sock.updateStatusPrivacy('contacts')
 // Atualizar quem pode adicionar você a grupos
 // Valores aceitos: 'all' | 'contacts' | 'contact_blacklist'
 await sock.updateGroupsAddPrivacy('contacts')
-
-// Silenciar chamadas de números desconhecidos
-// Valores aceitos: 'all' (permite todos) | 'known' (apenas contatos conhecidos)
-await sock.updateCallPrivacy('known')
 
 // Consultar todas as configurações de privacidade ativas da conta
 const privacySettings = await sock.fetchPrivacySettings()

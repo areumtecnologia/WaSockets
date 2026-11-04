@@ -1,17 +1,9 @@
 {
   "name": "@areumtecnologia/wasockets",
-  "version": "2.0.0",
+  "version": "2.2.0",
+  "whatsappVersion": "2.3000.1052938686",
   "description": "WhatsApp API Modification By areumtecnologia",
-  "keywords": [
-    "whatsapp",
-    "js-whatsapp",
-    "whatsapp-api",
-    "whatsapp-web",
-    "whatsapp-chat",
-    "whatsapp-group",
-    "automation",
-    "multi-device"
-  ],
+  "keywords": [],
   "homepage": "https://github.com/areumtecnologia/WaSockets",
   "repository": {
     "type": "git",
@@ -27,7 +19,12 @@
       "require": "./lib/index.js",
       "default": "./lib/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./client": {
+      "types": "./lib/Client/index.d.ts",
+      "require": "./lib/Client/index.js",
+      "default": "./lib/Client/index.js"
+    }
   },
   "publishConfig": {
     "access": "public"
@@ -48,29 +45,29 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@hapi/boom": "^10.0.1",
     "@adiwajshing/keyed-db": "^0.2.4",
     "@cacheable/node-cache": "3.0.1",
+    "@hapi/boom": "^10.0.1",
     "@itsukichan/libsignal-node": "^1.0.1",
     "async-mutex": "^0.5.0",
     "audio-decode": "^3.11.0",
     "cache-manager": "^5.7.6",
     "fflate": "^0.8.2",
     "lodash": "^4.17.21",
-    "unfurl.js": "^6.4.0",
     "lru-cache": "^11.1.0",
     "music-metadata": "^7.12.3",
-    "pino": "^10.3.1",
     "p-queue": "6.6.2",
+    "pino": "^10.3.1",
     "protobufjs": "^8.6.5",
     "qrcode-terminal": "^0.12.0",
+    "unfurl.js": "^6.4.0",
     "ws": "^8.13.0"
   },
   "devDependencies": {
+    "@itsukichan/eslint-config": "^1.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.0.0",
     "@types/ws": "^8.0.0",
-    "@itsukichan/eslint-config": "^1.0.0",
     "conventional-changelog-cli": "^5.0.0",
     "eslint": "^8.0.0",
     "jest": "^30.1.1",
@@ -117,5 +114,8 @@
     "js-yaml": "^4.1.1",
     "undici": "^6.21.1",
     "protobufjs": "^8.6.5"
+  },
+  "optionalDependencies": {
+    "@roamhq/wrtc": "^0.10.0"
   }
 }

@@ -1,4 +1,5 @@
 tests/
+docs/
 auth_info_baileys/
 .env
 .code-workspace

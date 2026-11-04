@@ -11,6 +11,7 @@ export * from './Store'
 export * from './WABinary'
 export * from './Plugins'
 export { proto }
+export * from './Client'
 
 export interface GroupPermissionsPolicies {
     announce?: boolean
@@ -33,6 +34,30 @@ export interface SendAlbumMediaItem {
     video?: any
     caption?: string
     [key: string]: any
+}
+
+
+export interface VoipConfig {
+    autoInit?: boolean
+    [key: string]: any
+}
+
+export interface CallOptions {
+    durationMs?: number
+    audioSource?: string
+    isVideo?: boolean
+}
+
+export interface ActiveCall {
+    readonly callId: string
+    readonly isVideo: boolean
+    readonly state: number
+    end(): void
+    mute(muted: boolean): void
+    waitForEnd(): Promise<string>
+    pushAudio(pcm: Float32Array): void
+    pushVideo(frameBuffer: ArrayBuffer | Uint8Array, width: number, height: number): void
+    on(event: 'ringing' | 'connected' | 'ended' | 'audio' | 'video', listener: (...args: any[]) => void): this
 }
 
 export interface UserFacingSocketConfig {
@@ -66,11 +91,23 @@ export interface UserFacingSocketConfig {
     enableGroupCache?: boolean
     cachedGroupMetadata?: (jid: string) => Promise<GroupMetadata | undefined>
     plugins?: any[]
+    voip?: boolean | VoipConfig
     [key: string]: any
 }
 
 export interface WASocket {
     type: 'md'
+    // VoIP Calling (Caminho A - Direct WebAssembly Multi-Device)
+    call(phoneNumber: string, options?: CallOptions): Promise<ActiveCall>
+    callVideo(phoneNumber: string, options?: Omit<CallOptions, 'isVideo'>): Promise<ActiveCall>
+    activeCall: ActiveCall | null
+    clearActiveCall(): void
+    rejectCall(callId: string, from?: string): Promise<void>
+    voip: {
+        getEngine(): Promise<any>
+        destroy(): void
+    }
+
     ws: any
     ev: BaileysEventEmitter
     authState: AuthenticationState
@@ -121,11 +158,13 @@ export interface WASocket {
     sendEventResponse(jid: string, eventCreationMessageKey: WAMessageKey, response: string | number, extraGuestCount?: number): Promise<WAMessage | undefined>
     cancelEvent(jid: string, eventKey: WAMessageKey): Promise<WAMessage | undefined>
 
-    // Calls (Web Calling)
-    offerCall(toJid: string, isVideo?: boolean): Promise<any>
-    acceptCall(callId: string, callFrom: string): Promise<void>
-    rejectCall(callId: string, callFrom: string): Promise<void>
-    terminateCall(callId: string, callFrom: string): Promise<void>
+    // Calls (VoIP & Web Calling)
+    voip: any
+    getVoIPRelayTokens(): Promise<any>
+    offerCall(toJid: string, isVideo?: boolean): Promise<{ id: string, to: string, callKey: Buffer }>
+    acceptCall(callId: string, callFrom: string, options?: { isVideo?: boolean, audioRate?: string }): Promise<void>
+    rejectCall(callId: string, callFrom: string, reason?: string | number): Promise<void>
+    terminateCall(callId: string, callFrom: string, reason?: string): Promise<void>
 
     // Chats & Contacts
     chatModify(mod: any, jid: string): Promise<void>
