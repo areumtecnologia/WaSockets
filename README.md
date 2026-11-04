@@ -6,7 +6,7 @@
 
 ---
 
-> 💡 **Nota:** Esta é a documentação padrão da biblioteca (mensagens, mídias, comunidades, canais, grupos, botões e gerenciamento de conta). Para a documentação completa com todos os recursos avançados incluindo **chamadas de áudio e vídeo em tempo real (VoIP nativo)**, consulte o [README_DETALHADO.md](./README_DETALHADO.md).
+> 💡 **Nota:** Esta é a documentação padrão da biblioteca (mensagens, mídias, comunidades, canais, grupos, botões e gerenciamento de conta). Para a documentação técnica detalhada de arquitetura e módulos adicionais, consulte o [README_DETALHADO.md](./README_DETALHADO.md).
 
 ---
 
@@ -38,7 +38,6 @@ O **WaSockets** foi criado para resolver problemas crônicos de estabilidade e a
 | **Recursos Web (v1.1.6)** | Reação a Status | Método nativo `reactToStatus` para curtir e reagir diretamente a publicações de Status. |
 | **Recursos Web (v1.1.6)** | Eventos & RSVP | Criação, cancelamento (`cancelEvent`) e confirmação de presença (`sendEventResponse`) em eventos de grupo. |
 | **Recursos Web (v1.1.6)** | Favoritos & Notas de Contato | Sincronização via App State de chats favoritos (`updateFavorite`) e anotações internas de contatos (`updateChatNote`). |
-| **Motor VoIP Nativo & WebCalling** | Voz, Vídeo, Tela & Inbound VoIP | Motor VoIP unificado com WebAssembly (`whatsapp.wasm`), chamadas de voz e vídeo 1:1, atendimento de chamadas recebidas (`call.received` / `acceptCall`), compartilhamento de tela ao vivo (`startScreenShare`), bypass de erro 70004 com sanitização de device JIDs, bypass de "Silenciar Desconhecidos" via TC Token, despertador anti-doze, áudio bidirecional (16kHz PCM/Opus), detecção VAD e telemetria completa. |
 | **Recursos Web (v1.1.6)** | Resolução Reversa de LID | Consulta reversa USync para obter o número de telefone a partir de um identificador `@lid` (`getPnUser`). |
 | **Transição LID (Pilar 2)** | Store Unificado (LID & PN) | `store.getContact(jid)` e `store.getChat(jid)` com indexação cruzada e resolução automática de apelidos LID/PN. |
 | **Transição LID (Pilar 2)** | Roteamento & Resolução JID | Métodos `sock.toPn()`, `sock.toLid()`, `sock.resolveJid()` e auto-aprendizado de chaves no cache do Signal. |
@@ -133,7 +132,7 @@ yarn add github:areumtecnologia/WaSockets
 
 ## 🌟 Camada de Abstração de Alto Nível (WaClient) — Recomendado
 
-> **Novo no WaSockets!** A classe `WaClient` é uma camada de abstração de alto nível que elimina mais de **85% do boilerplate** comum de integrações com WhatsApp. Ela gerencia automaticamente autenticação multi-arquivos, reconexões inteligentes, normalização instantânea de mensagens e mídias, oferece builders fluentes de botões interativos e divide todas as funcionalidades em **14 submódulos especializados**.
+> **Novo no WaSockets!** A classe `WaClient` é uma camada de abstração de alto nível que elimina mais de **85% do boilerplate** comum de integrações com WhatsApp. Ela gerencia automaticamente autenticação multi-arquivos, reconexões inteligentes, normalização instantânea de mensagens e mídias, oferece builders fluentes de botões interativos e divide todas as funcionalidades em **13 submódulos especializados**.
 
 ### Por que usar o WaClient?
 
@@ -304,7 +303,6 @@ const {
     QuickReplyButton,
     UrlButton,
     CopyCodeButton,
-    CallButton,
     PixButton,
     ListButton,
     ListSection,
@@ -319,7 +317,6 @@ const interactive = new InteractiveMessage()
     .addButton(new QuickReplyButton('Ativar Teste Grátis', 'btn_trial'))
     .addButton(new UrlButton('Ver Recursos', 'https://areumtecnologia.com.br'))
     .addButton(new CopyCodeButton('Copiar Cupom 20%', 'DESCONTO20'))
-    .addButton(new CallButton('Ligar para o Suporte', '+5511999999999'))
     .addButton(new PixButton('Pagar via PIX', '12345678900', 'CPF', 'Áreum Tecnologia'));
 
 await client.sendInteractive('5511999999999@s.whatsapp.net', interactive);
@@ -992,10 +989,11 @@ await sock.sendMessage(jid, {
             })
         },
         {
-            name: 'cta_call',
+            name: 'cta_copy',
             buttonParamsJson: JSON.stringify({
-                display_text: 'Ligar Agora',
-                phone_number: '5511999999999'
+                display_text: 'Copiar Cupom',
+                id: 'btn_cupom',
+                copy_code: 'DESCONTO20'
             })
         }
     ]
@@ -1344,7 +1342,7 @@ const [pnUser] = await sock.getPnUser('12345678901234@lid')
 
 ### Store Unificado de Contatos e Conversas (`makeInMemoryStore`)
 
-Tradicionalmente, quando o WhatsApp chaveia as mensagens para `@lid`, chamadas como `store.contacts[jid]` ou `store.messages[jid]` falhavam por incompatibilidade de identificadores. O **WaSockets** resolve isso unificando o catálogo em tempo de execução:
+Tradicionalmente, quando o WhatsApp chaveia as mensagens para `@lid`, consultas como `store.contacts[jid]` ou `store.messages[jid]` falhavam por incompatibilidade de identificadores. O **WaSockets** resolve isso unificando o catálogo em tempo de execução:
 
 ```javascript
 import { makeInMemoryStore } from '@areumtecnologia/wasockets'
@@ -1668,7 +1666,7 @@ await sock.groupRejectPendingParticipants(groupJid, ['5511888888888@s.whatsapp.n
 
 ### Configuração Unificada de Políticas do Grupo
 
-Altere facilmente todas as diretrizes de segurança e permissões do grupo em uma única chamada:
+Altere facilmente todas as diretrizes de segurança e permissões do grupo em uma única operação:
 
 ```javascript
 await sock.groupUpdatePermissions(groupJid, {
@@ -1912,7 +1910,7 @@ const sock = makeWASocket({
 
 ### Como o WhatsApp se comunica (BinaryNodes)
 
-As mensagens são trocadas em formato binário encapsuladas em estruturas chamadas `BinaryNode`. Cada nó possui três atributos:
+As mensagens são trocadas em formato binário encapsuladas em estruturas denominadas `BinaryNode`. Cada nó possui três atributos:
 - **`tag`**: Nome da ação (ex: `message`, `ib`, `presence`, `iq`)
 - **`attrs`**: Objeto contendo propriedades em string/chave-valor (ID, timestamp, remetente, etc.)
 - **`content`**: O corpo de dados do nó (geralmente outro array de nós ou um buffer criptografado)
