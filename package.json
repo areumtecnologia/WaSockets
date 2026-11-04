@@ -1,8 +1,8 @@
 {
   "name": "@areumtecnologia/wasockets",
-  "version": "2.2.2",
-  "whatsappVersion": "2.3000.1052938686",
-  "description": "WhatsApp API Modification By areumtecnologia",
+  "version": "2.2.3",
+  "whatsappVersion": "2.3000.1053049953",
+  "description": "Communication Library By areumtecnologia",
   "keywords": [],
   "homepage": "https://github.com/areumtecnologia/WaSockets",
   "repository": {
@@ -46,17 +46,17 @@
   },
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
-    "@cacheable/node-cache": "3.0.1",
+    "@cacheable/node-cache": "^3.1.1",
     "@hapi/boom": "^10.0.1",
     "@itsukichan/libsignal-node": "^1.0.1",
     "async-mutex": "^0.5.0",
     "audio-decode": "^3.11.0",
-    "cache-manager": "^5.7.6",
+    "cache-manager": "^7.2.9",
     "fflate": "^0.8.2",
     "lodash": "^4.17.21",
     "lru-cache": "^11.1.0",
-    "music-metadata": "^7.12.3",
-    "p-queue": "6.6.2",
+    "music-metadata": "^12.3.4",
+    "p-queue": "^10.0.0",
     "pino": "^10.3.1",
     "protobufjs": "^8.6.5",
     "qrcode-terminal": "^0.12.0",
@@ -69,27 +69,23 @@
     "@types/node": "^26.0.0",
     "@types/ws": "^8.0.0",
     "conventional-changelog-cli": "^5.0.0",
-    "eslint": "^8.0.0",
+    "eslint": "^10.14.0",
     "jest": "^30.1.1",
-    "jimp": "^0.22.12",
+    "jimp": "^1.6.1",
     "json": "^11.0.0",
-    "open": "^8.4.2",
-    "release-it": "^20.2.0",
+    "open": "^11.0.4",
+    "release-it": "^21.0.3",
     "ts-jest": "^29.4.1",
     "ts-node": "^10.8.1",
     "typedoc": "^0.28.19",
-    "typedoc-plugin-markdown": "4.12.0",
-    "typescript": "^6.0.3"
+    "typedoc-plugin-markdown": "^4.14.1",
+    "typescript": "^7.0.2"
   },
   "peerDependencies": {
-    "jimp": "^0.22.12",
-    "sharp": "*"
+    "jimp": "^1.6.1"
   },
   "peerDependenciesMeta": {
     "jimp": {
-      "optional": true
-    },
-    "sharp": {
       "optional": true
     }
   },
