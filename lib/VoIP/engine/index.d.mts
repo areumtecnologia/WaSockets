@@ -37,6 +37,9 @@ export declare class ActiveCall extends EventEmitter {
     pushAudio: (audioData: Float32Array | Int16Array | Buffer, options?: { sampleRate?: number }) => void;
     pushVideo: (frameBuffer: Buffer, width: number, height: number) => void;
     pushVideoRgba: (rgbaBuffer: Buffer, width: number, height: number) => void;
+    get isSharingScreen(): boolean;
+    startScreenShare: (options?: { fps?: number; width?: number; height?: number; screen?: string }) => any;
+    stopScreenShare: () => void;
 
     getRxStream: (options?: StreamOptions) => Readable;
     getTxStream: (options?: StreamOptions) => Readable;

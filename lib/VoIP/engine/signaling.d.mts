@@ -38,4 +38,7 @@ export declare class SignalingBridge {
     resolveLid: (pnJid: string) => Promise<string | undefined>;
     issueTcToken: (jid: string) => Promise<boolean>;
     getRemoteDeviceJid: (callId: string) => string | undefined;
+    registerOutboundCall: (callId: string, peerLid: string, peerPn?: string) => void;
+    registerInboundCall: (callId: string, peerJid: string, peerPn?: string) => void;
+    unregisterCall: (callId: string) => void;
 }

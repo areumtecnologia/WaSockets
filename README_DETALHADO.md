@@ -1488,6 +1488,103 @@ sock.ev.on('call.ended', ({ callId, to, reason }) => console.log(`Encerrada: ${r
 
 ---
 
+### 📥 Atendimento de Chamadas Recebidas (Inbound VoIP)
+
+A biblioteca detecta automaticamente chamadas de voz ou vídeo de entrada no evento `call.received`, disponibilizando os métodos `accept()` e `reject()`:
+
+```javascript
+sock.ev.on('call.received', async (incomingCall) => {
+    console.log(`📞 Chamada recebida de: ${incomingCall.from} (Vídeo: ${incomingCall.isVideo})`)
+
+    // Opção A: Rejeitar a chamada
+    // await incomingCall.reject('busy')
+
+    // Opção B: Atender a chamada (Voz ou Vídeo)
+    const call = await incomingCall.accept({
+        isVideo: incomingCall.isVideo,
+        durationMs: 180_000,
+        audioSource: 'live'
+    })
+
+    call.on('connected', () => console.log('🎉 Chamada atendida com sucesso!'))
+
+    // Receber áudio e vídeo do chamador:
+    call.on('audio', (pcm) => { /* 16kHz PCM Float32 */ })
+    call.on('video', ({ frameBuffer, width, height }) => { /* Frames NV12/I420 */ })
+
+    // Transmitir áudio para quem ligou:
+    // call.pushAudio(minhasAmostrasFloat32)
+})
+```
+
+---
+
+### 🎛️ Utilitários Puros de Áudio DSP (Zero-Dependency)
+
+Para manipular áudio PCM sem exigir ferramentas externas (como FFmpeg ou compiladores nativos):
+
+```javascript
+import { audioUtils } from '@areumtecnologia/wasockets'
+// ou: import { float32ToInt16, int16ToFloat32, resampleFloat32, createWavHeader } from '@areumtecnologia/wasockets'
+
+// 1. Converter Float32 (-1.0 a 1.0) para PCM 16-bit
+const int16Buffer = audioUtils.float32ToInt16(pcmFloat32, true /* asBuffer */)
+
+// 2. Converter PCM 16-bit para Float32
+const float32Array = audioUtils.int16ToFloat32(int16Buffer)
+
+// 3. Reamostragem ultrarrápida (ex: 16 kHz -> 8 kHz ou 24 kHz)
+const downsampled = audioUtils.resampleFloat32(float32Array, 16000, 8000)
+
+// 4. Gerar cabeçalho WAV padrão em memória (44 bytes)
+const wavHeader = audioUtils.createWavHeader({
+    sampleRate: 16000,
+    numChannels: 1,
+    bitDepth: 16,
+    dataByteLength: int16Buffer.length
+})
+const completeWavFile = Buffer.concat([wavHeader, int16Buffer])
+```
+
+---
+
+### 🖥️ Compartilhamento de Tela em Tempo Real durante a Chamada (Screen Sharing)
+
+A biblioteca permite transmitir a tela do computador diretamente para o smartphone do destinatário a qualquer momento durante uma chamada de vídeo em andamento:
+
+```javascript
+// Durante uma chamada de vídeo ativa:
+call.on('connected', () => {
+    console.log('🎉 Chamada conectada!')
+
+    // 1. Iniciar compartilhamento de tela com resolução e FPS otimizados
+    call.startScreenShare({
+        fps: 15,          // 15 FPS (faixa ideal para leitura e baixa latência)
+        width: 640,       // Resolução padrão do uplink do WhatsApp
+        height: 360
+    })
+
+    console.log('🖥️ Compartilhamento de tela ativo:', call.isSharingScreen) // true
+})
+
+// Eventos de ciclo de vida do compartilhamento de tela:
+call.on('screenshare:started', ({ width, height, fps }) => {
+    console.log(`Transmissão da tela iniciada (${width}x${height} @ ${fps}fps)`)
+})
+
+call.on('screenshare:stopped', () => {
+    console.log('Transmissão da tela pausada/encerrada.')
+})
+
+// 2. Para pausar ou interromper o compartilhamento sem derrubar a ligação:
+// call.stopScreenShare()
+```
+
+> [!NOTE]
+> O método `startScreenShare` detecta automaticamente o sistema operacional (Windows com `gdigrab`, Linux com `x11grab` e macOS com `avfoundation`). Ao encerrar a chamada (`call.end()`), qualquer processo de captura de tela em execução é finalizado automaticamente de forma limpa.
+
+---
+
 ### 📊 Telemetria de Chamada em Tempo Real
 
 Durante e ao término de cada chamada, o motor expõe métricas de qualidade de rede e mídia:

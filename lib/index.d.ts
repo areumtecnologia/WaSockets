@@ -48,17 +48,84 @@ export interface CallOptions {
     isVideo?: boolean
 }
 
+export interface CallPeerInfo {
+    phoneNumber?: string
+    pnJid?: string
+    lidJid?: string
+    displayName?: string
+}
+
+export interface CallTelemetryStats {
+    rttMs?: number
+    packetLossPct?: number
+    jitterMs?: number
+    rxAudioPackets?: number
+    txAudioPackets?: number
+    rxVideoFrames?: number
+    txVideoFrames?: number
+    [key: string]: any
+}
+
+export interface VideoFrameEvent {
+    frameBuffer: Buffer | Uint8Array
+    width: number
+    height: number
+    format?: number
+}
+
+export interface VADSpeakingEvent {
+    volumeDbfs: number
+    rms: number
+}
+
+export interface VADSilenceEvent {
+    durationMs: number
+}
+
+export interface IncomingCall {
+    readonly id: string
+    readonly callId: string
+    readonly from: string
+    readonly chatId?: string
+    readonly isVideo: boolean
+    readonly isGroup: boolean
+    readonly date: Date
+    accept(options?: CallOptions): Promise<ActiveCall>
+    reject(reason?: string | number): Promise<void>
+}
+
 export interface ActiveCall {
     readonly callId: string
     readonly isVideo: boolean
     readonly state: number
+    readonly direction?: 'outbound' | 'inbound'
+    readonly peer?: CallPeerInfo
+    readonly caller?: CallPeerInfo
     end(): void
     mute(muted: boolean): void
     waitForEnd(): Promise<string>
     pushAudio(pcm: Float32Array): void
-    pushVideo(frameBuffer: ArrayBuffer | Uint8Array, width: number, height: number): void
-    on(event: 'ringing' | 'connected' | 'ended' | 'audio' | 'video', listener: (...args: any[]) => void): this
+    pushVideo(frameBuffer: ArrayBuffer | Uint8Array | Buffer, width: number, height: number): void
+    pushVideoRgba(rgbaBuffer: ArrayBuffer | Uint8Array | Buffer, width: number, height: number): void
+    readonly isSharingScreen?: boolean
+    startScreenShare(options?: { fps?: number; width?: number; height?: number; screen?: string }): any
+    stopScreenShare(): void
+    getRxStream(options?: { format?: 'float32' | 'pcm_s16le' }): import('stream').Readable
+    getTxStream(options?: { format?: 'float32' | 'pcm_s16le' }): import('stream').Readable
+    recordToFile(filePath: string, options?: { source?: 'rx' | 'tx' | 'both', channels?: number }): Promise<void>
+    stopRecording(): void
+    on(event: 'ringing' | 'connected', listener: () => void): this
+    on(event: 'ended', listener: (reason: string) => void): this
+    on(event: 'audio' | 'audio_out' | 'audio:out', listener: (pcm: Float32Array) => void): this
+    on(event: 'video', listener: (frame: VideoFrameEvent) => void): this
+    on(event: 'video_out' | 'video:out', listener: (frame: Omit<VideoFrameEvent, 'format'>) => void): this
+    on(event: 'speaking', listener: (data: VADSpeakingEvent) => void): this
+    on(event: 'silence', listener: (data: VADSilenceEvent) => void): this
+    on(event: 'stats' | 'telemetry', listener: (stats: CallTelemetryStats) => void): this
+    on(event: string, listener: (...args: any[]) => void): this
 }
+
+export type CallSession = ActiveCall
 
 export interface UserFacingSocketConfig {
     version?: [number, number, number]
@@ -97,12 +164,14 @@ export interface UserFacingSocketConfig {
 
 export interface WASocket {
     type: 'md'
-    // VoIP Calling (Caminho A - Direct WebAssembly Multi-Device)
+    // VoIP Calling (Direct WebAssembly Multi-Device)
     call(phoneNumber: string, options?: CallOptions): Promise<ActiveCall>
     callVideo(phoneNumber: string, options?: Omit<CallOptions, 'isVideo'>): Promise<ActiveCall>
+    acceptCall(callId: string, from?: string, options?: CallOptions): Promise<ActiveCall>
+    answerCall(callId: string, from?: string, options?: CallOptions): Promise<ActiveCall>
     activeCall: ActiveCall | null
     clearActiveCall(): void
-    rejectCall(callId: string, from?: string): Promise<void>
+    rejectCall(callId: string, from?: string, reason?: string | number): Promise<void>
     voip: {
         getEngine(): Promise<any>
         destroy(): void
