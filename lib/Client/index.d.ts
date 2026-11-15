@@ -58,8 +58,13 @@ export declare class MediaObject {
     mimetype: string
     fileLength: number
     fileName: string
+    caption: string
     seconds: number
+    duration: number | null
     isVoice: boolean
+    isPtt: boolean
+    isGif: boolean
+    isViewOnce: boolean
     isAnimated: boolean
     extension: string
 
