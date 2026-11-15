@@ -196,26 +196,90 @@ client.connect();
 
 ### Eventos Semânticos
 
-A classe `WaClient` emite eventos limpos e intuitivos através do enum `Events`:
+A classe `WaClient` emite eventos limpos, tipados e intuitivos através do enum `Events`:
 
 ```javascript
-const { Events } = require('@areumtecnologia/wasockets/client');
+const { Events, ConnectionStatus } = require('@areumtecnologia/wasockets/client');
 
-client.on(Events.CONNECTED, ({ user }) => { /* Conexão estabelecida */ });
-client.on(Events.DISCONNECTED, ({ reason, willReconnect, error }) => { /* Queda de conexão */ });
-client.on(Events.QR_CODE, ({ qr, base64 }) => { /* QR code emitido (terminal ou base64 para frontend) */ });
-client.on(Events.PAIRING_CODE, ({ code }) => { /* Código de emparelhamento por telefone */ });
-client.on(Events.LOGGED_OUT, () => { /* Desconectado/revogado pelo celular */ });
+// 1. Mudança de Estado de Conexão
+client.on(Events.STATUS_CHANGE, (status) => {
+    // Acesso às propriedades ou desestruturação:
+    console.log(`De: ${status.previous} -> Para: ${status.current}`);
+    // Ou interpolação direta (serializa JSON limpo automaticamente, sem [object Object]):
+    console.log(`Status: ${status}`); 
+});
 
-client.on(Events.MESSAGE_RECEIVED, async (ctx, rawMsg) => { /* Nova mensagem recebida */ });
-client.on(Events.MESSAGE_SENT, async (ctx, rawMsg) => { /* Mensagem enviada pelo bot */ });
-client.on(Events.MESSAGE_UPDATE, (updates) => { /* Edições de mensagem, apagadas ou confirmações */ });
+// 2. Ciclo de Vida da Sessão
+client.on(Events.QR_CODE, (data) => {
+    // Interpolação direta retorna a string do QR puro:
+    console.log(`Escaneie o QR: ${data}`); // ou data.qr
+});
 
-client.on(Events.GROUP_PARTICIPANTS_UPDATE, (update) => { /* Entrada, saída ou promoção em grupo */ });
-client.on(Events.PRESENCE_UPDATE, (presence) => { /* Usuário online, digitando ou offline */ });
-client.on(Events.CONTACTS_UPSERT, (contacts) => { /* Novos contatos sincronizados */ });
-client.on(Events.LABELS_UPDATE, (labels) => { /* Criação ou associação de etiquetas comerciais */ });
+client.on(Events.PAIRING_CODE, (data) => {
+    // Interpolação direta retorna o código de 8 dígitos puro:
+    console.log(`Código de pareamento: ${data}`); // ou data.code
+});
+
+client.on(Events.CONNECTED, (data) => {
+    console.log(`✓ Conectado: ${data}`); // ou data.user
+});
+
+client.on(Events.DISCONNECTED, (data) => {
+    console.warn(`Desconectado: ${data}`); // exibe motivo, tentativa e delay
+    // Propriedades: data.error, data.willReconnect, data.attempt, data.delayMs
+});
+
+client.on(Events.LOGGED_OUT, () => {
+    console.error('Sessão revogada permanentemente no celular.');
+});
+
+// 3. Mensagens
+client.on(Events.MESSAGE_RECEIVED, async (ctx) => {
+    console.log(`Mensagem recebida: ${ctx}`); // "[Message 123] Alice: Olá!"
+});
+
+client.on(Events.MESSAGE_SENT, async (ctx) => {
+    console.log(`Mensagem enviada: ${ctx}`);
+});
+
+client.on(Events.MESSAGE_DELETE, (item) => {
+    console.log(`Mensagens apagadas: ${item}`); // ex: "[MessageDelete: MSG_001]"
+});
+
+// 4. VoIP / Chamadas
+client.on(Events.CALL_INCOMING, async (call) => {
+    console.log(`Chamada recebida: ${call}`); // "[Call 123] 5511... (Vídeo)"
+});
+
+// 5. Grupos e Presença
+client.on(Events.GROUP_PARTICIPANTS_UPDATE, (update) => {
+    console.log(`Atualização de grupo: ${update}`); // "[GroupParticipantsUpdate add: ...]"
+});
+
+client.on(Events.PRESENCE_UPDATE, (presence) => {
+    console.log(`Presença: ${presence}`);
+});
 ```
+
+#### 🛡️ Formatação Inteligente (DX Amigável — Sem `[object Object]`)
+Todos os eventos e contextos do `WaClient` implementam métodos nativos `.toString()`, `.toJSON()` e `[Symbol.toPrimitive]`. Isso significa que:
+- **Desestruturação:** Funciona 100% como antes (`({ qr })`, `({ current, previous })`, `({ user })`).
+- **Logs e Interpolação:** Você pode usar `console.log(evento)`, `console.log("evento: " + evento)` ou `\`evento: \${evento}\`` que a saída será sempre legível e semântica, **eliminando completamente o infame `[object Object]`** em logs de produção, Winston, Morgan ou terminal do VSCode.
+
+| Evento | Payload Retornado | Interpolação em String (`` ${data} ``) |
+| :--- | :--- | :--- |
+| `STATUS_CHANGE` | `ConnectionStatusChange` | `{"current":"connecting","previous":"idle"}` |
+| `QR_CODE` | `QrCodeEvent` | String bruta do QR Code (`data.qr`) |
+| `PAIRING_CODE` | `PairingCodeEvent` | Código de 8 dígitos puro (`data.code`) |
+| `CONNECTED` | `ConnectedEvent` | `[Connected: <Nome> (<JID>)]` |
+| `DISCONNECTED` | `DisconnectedEvent` | `[Disconnected: <Motivo> (Reconnecting: ...)]` |
+| `LOGGED_OUT` | `LoggedOutEvent` | `[LoggedOut: Session logged out on WhatsApp device]` |
+| `MESSAGE_RECEIVED` | `MessageContext` | `[Message <ID>] <Autor>: "<Texto>"` |
+| `MESSAGE_SENT` | `MessageContext` | `[Message <ID>] <Autor>: "<Texto>"` |
+| `MESSAGE_DELETE` | `MessageDeleteEvent` | `[MessageDelete: <ID_1>, <ID_2>]` |
+| `CALL_INCOMING` | `CallContext` | `[Call <ID>] <Número> (<Vídeo/Voz>) - <Status>]` |
+| `GROUP_PARTICIPANTS_UPDATE`| `GroupParticipantsUpdateEvent` | `[GroupParticipantsUpdate <ação>: <participantes> in <grupo>]` |
+| `PRESENCE_UPDATE` | `PresenceUpdateEvent` | `[PresenceUpdate <JID>: <status>]` |
 
 ---
 
