@@ -37,6 +37,80 @@ export declare const ConnectionStatus: {
 
 export type ConnectionStatusType = typeof ConnectionStatus[keyof typeof ConnectionStatus]
 
+export declare class ConnectionStatusChange {
+    current: ConnectionStatusType
+    previous: ConnectionStatusType
+    constructor(current: ConnectionStatusType, previous: ConnectionStatusType)
+    toString(): string
+    toJSON(): { current: ConnectionStatusType; previous: ConnectionStatusType }
+}
+
+export declare class QrCodeEvent {
+    qr: string
+    constructor(qr: string)
+    toString(): string
+    toJSON(): { qr: string }
+}
+
+export declare class PairingCodeEvent {
+    code: string
+    constructor(code: string)
+    toString(): string
+    toJSON(): { code: string }
+}
+
+export declare class ConnectedEvent {
+    user: any
+    readonly name: string
+    readonly id: string
+    constructor(user: any)
+    toString(): string
+    toJSON(): { user: any }
+}
+
+export declare class DisconnectedEvent {
+    error: any | null
+    willReconnect: boolean
+    attempt: number
+    delayMs: number
+    reason: string
+    constructor(options?: any)
+    toString(): string
+    toJSON(): any
+}
+
+export declare class LoggedOutEvent {
+    error: any | null
+    constructor(error?: any)
+    toString(): string
+    toJSON(): any
+}
+
+export declare class MessageDeleteEvent {
+    keys: any[]
+    readonly ids: string[]
+    constructor(keys: any | any[])
+    toString(): string
+    toJSON(): { keys: any[] }
+}
+
+export declare class GroupParticipantsUpdateEvent {
+    id: string
+    participants: string[]
+    action: string
+    constructor(update?: any)
+    toString(): string
+    toJSON(): { id: string; participants: string[]; action: string }
+}
+
+export declare class PresenceUpdateEvent {
+    id: string
+    presences: Record<string, any>
+    constructor(presence?: any)
+    toString(): string
+    toJSON(): { id: string; presences: Record<string, any> }
+}
+
 export interface WaClientOptions {
     sessionName?: string
     dataPath?: string
@@ -530,21 +604,21 @@ export declare class WaClient extends EventEmitter {
     get isConnected(): boolean
     get rawSocket(): any
 
-    on(event: 'status.change', listener: (status: { current: ConnectionStatusType; previous: ConnectionStatusType }) => void): this
-    on(event: 'qr', listener: (data: { qr: string }) => void): this
-    on(event: 'pairing.code', listener: (data: { code: string }) => void): this
-    on(event: 'connected', listener: (data: { user: any }) => void): this
-    on(event: 'disconnected', listener: (data: { error?: any; willReconnect: boolean; attempt?: number; delayMs?: number }) => void): this
-    on(event: 'logged.out', listener: (data: { error?: any }) => void): this
+    on(event: 'status.change', listener: (status: ConnectionStatusChange) => void): this
+    on(event: 'qr', listener: (data: QrCodeEvent) => void): this
+    on(event: 'pairing.code', listener: (data: PairingCodeEvent) => void): this
+    on(event: 'connected', listener: (data: ConnectedEvent) => void): this
+    on(event: 'disconnected', listener: (data: DisconnectedEvent) => void): this
+    on(event: 'logged.out', listener: (data: LoggedOutEvent) => void): this
     on(event: 'call.incoming', listener: (call: CallContext) => void): this
     on(event: 'call.status', listener: (calls: any[]) => void): this
     on(event: 'message.received', listener: (ctx: MessageContext, raw: proto.IWebMessageInfo) => void): this
     on(event: 'message.sent', listener: (ctx: MessageContext, raw: proto.IWebMessageInfo) => void): this
     on(event: 'message.update', listener: (updates: any[]) => void): this
-    on(event: 'message.delete', listener: (item: any) => void): this
-    on(event: 'presence.update', listener: (presence: any) => void): this
+    on(event: 'message.delete', listener: (item: MessageDeleteEvent) => void): this
+    on(event: 'presence.update', listener: (presence: PresenceUpdateEvent) => void): this
     on(event: 'contacts.upsert', listener: (contacts: any[]) => void): this
-    on(event: 'group.participants.update', listener: (update: any) => void): this
+    on(event: 'group.participants.update', listener: (update: GroupParticipantsUpdateEvent) => void): this
     on(event: 'error', listener: (error: any) => void): this
     on(event: string | symbol, listener: (...args: any[]) => void): this
 }
