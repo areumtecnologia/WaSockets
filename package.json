@@ -1,6 +1,6 @@
 {
   "name": "@areumtecnologia/wasockets",
-  "version": "2.2.3",
+  "version": "2.3.0",
   "whatsappVersion": "2.3000.1053049953",
   "description": "Communication Library By areumtecnologia",
   "keywords": [],
@@ -38,8 +38,8 @@
     "changelog:last": "conventional-changelog -p angular -r 2",
     "changelog:preview": "conventional-changelog -p angular -u",
     "changelog:update": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0",
-    "lint": "eslint lib --ext .js",
-    "lint:fix": "yarn lint --fix",
+    "lint": "eslint lib",
+    "lint:fix": "eslint lib --fix",
     "preinstall": "node ./engine-requirements.js",
     "release": "release-it",
     "test": "jest --passWithNoTests"
@@ -50,34 +50,34 @@
     "@hapi/boom": "^10.0.1",
     "@itsukichan/libsignal-node": "^1.0.1",
     "async-mutex": "^0.5.0",
-    "audio-decode": "^3.11.0",
+    "audio-decode": "^3.12.0",
     "cache-manager": "^7.2.9",
-    "fflate": "^0.8.2",
-    "lodash": "^4.17.21",
-    "lru-cache": "^11.1.0",
-    "music-metadata": "^12.3.4",
+    "fflate": "^0.8.3",
+    "lodash": "^4.18.1",
+    "lru-cache": "^11.5.3",
+    "music-metadata": "^12.5.0",
     "p-queue": "^10.0.0",
-    "pino": "^10.3.1",
-    "protobufjs": "^8.6.5",
+    "pino": "^10.4.0",
+    "protobufjs": "^8.8.1",
     "qrcode-terminal": "^0.12.0",
     "unfurl.js": "^6.4.0",
-    "ws": "^8.13.0"
+    "ws": "^8.23.0"
   },
   "devDependencies": {
     "@itsukichan/eslint-config": "^1.0.0",
     "@types/jest": "^30.0.0",
-    "@types/node": "^26.0.0",
-    "@types/ws": "^8.0.0",
+    "@types/node": "^26.6.6",
+    "@types/ws": "^8.18.2",
     "conventional-changelog-cli": "^5.0.0",
-    "eslint": "^10.14.0",
-    "jest": "^30.1.1",
+    "eslint": "^10.15.0",
+    "jest": "^30.5.2",
     "jimp": "^1.6.1",
     "json": "^11.0.0",
     "open": "^11.0.4",
-    "release-it": "^21.0.3",
-    "ts-jest": "^29.4.1",
-    "ts-node": "^10.8.1",
-    "typedoc": "^0.28.19",
+    "release-it": "^21.1.2",
+    "ts-jest": "^29.4.15",
+    "ts-node": "^10.9.2",
+    "typedoc": "^0.28.20",
     "typedoc-plugin-markdown": "^4.14.1",
     "typescript": "^7.0.2"
   },
@@ -89,7 +89,7 @@
       "optional": true
     }
   },
-  "packageManager": "yarn@1.22.19",
+  "packageManager": "yarn@1.22.22",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -103,13 +103,19 @@
     "ip": "^2.0.1",
     "js-yaml": "^4.1.1",
     "undici": "^6.21.1",
-    "protobufjs": "^8.6.5"
+    "protobufjs": "^8.8.1",
+    "ts-jest": {
+      "typescript": "$typescript"
+    },
+    "typedoc": {
+      "typescript": "$typescript"
+    }
   },
   "resolutions": {
     "ip": "^2.0.1",
     "js-yaml": "^4.1.1",
     "undici": "^6.21.1",
-    "protobufjs": "^8.6.5"
+    "protobufjs": "^8.8.1"
   },
   "optionalDependencies": {
     "@roamhq/wrtc": "^0.10.0"

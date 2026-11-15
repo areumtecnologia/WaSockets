@@ -59,7 +59,8 @@ O **WaSockets** foi criado para resolver problemas crônicos de estabilidade e a
   - [O Contexto de Mensagem (MessageContext / ctx)](#o-contexto-de-mensagem-messagecontext--ctx)
   - [Builders de Botões Interativos (InteractiveMessage)](#builders-de-botões-interativos-interactivemessage)
   - [Controle de Presença Fluente (Typing / Recording)](#controle-de-presença-fluente-typing--recording)
-  - [Os 13 Submódulos Especializados](#os-13-submódulos-especializados)
+  - [Os 12 Submódulos Especializados](#os-12-submódulos-especializados)
+  - [Guia Detalhado da Abstração (docs/CLIENT_GUIDE.md)](./docs/CLIENT_GUIDE.md)
   - [Opções de Configuração (WaClientOptions)](#opções-de-configuração-waclientoptions)
 - [Instalação](#-instalação)
 - [API de Baixo Nível (makeWASocket Legado)](#-conectando-a-conta)
@@ -341,6 +342,64 @@ await client.sendInteractive('5511999999999@s.whatsapp.net', lista);
 
 ---
 
+### Enquetes (PollBuilder) e Eventos (EventBuilder)
+
+Crie enquetes interativas e convites de eventos para grupos de forma declarativa:
+
+`javascript
+const { PollBuilder, EventBuilder } = require('@areumtecnologia/wasockets/client');
+
+// 1. Enquete com contagem de votos configurável
+const enquete = new PollBuilder()
+    .setName('Qual recurso você mais utiliza no WaSockets?')
+    .addOption('VoIP e Ligações WebAssembly')
+    .addOption('Botões Interativos e PIX')
+    .addOption('Canais / Newsletters v2')
+    .setSelectableCount(1);
+
+await client.sendPoll('5511999999999', enquete);
+
+// 2. Convite de Evento com RSVP para Grupo
+const evento = new EventBuilder()
+    .setName('Reunião de Alinhamento Trimestral')
+    .setDescription('Apresentação de resultados e novos objetivos')
+    .setStartDate(new Date(2026, 11, 20, 10, 0))
+    .setEndDate(new Date(2026, 11, 20, 12, 0))
+    .setLocation('Sala Virtual / Meet', -23.55052, -46.633308)
+    .setCall('voice');
+
+await client.sendEvent('120363000000000000@g.us', evento);
+`
+
+---
+
+### Controle de Chamadas VoIP (CallContext)
+
+Gerencie chamadas ativas ou recebidas com facilidade via WebAssembly:
+
+`javascript
+const { Events } = require('@areumtecnologia/wasockets/client');
+
+// 1. Receber e atender chamada recebida
+client.on(Events.CALL_INCOMING, async (call) => {
+    console.log(Chamada recebida de:  ());
+
+    if (call.isVideo) {
+        await call.reject('Não aceitamos chamadas de vídeo');
+    } else {
+        await call.accept();
+        await call.playAudio('./audios/atendimento-ura.opus');
+    }
+});
+
+// 2. Realizar chamada ativa de voz ou vídeo
+const call = await client.voip.call('5511999999999');
+await call.playAudio('./alerta.opus');
+await call.hangup();
+`
+
+---
+
 ### Controle de Presença Fluente (Typing / Recording)
 
 Indique que o bot está digitando ou gravando áudio de forma segura, com cancelamento automático ao enviar ou via objeto retornado:
@@ -363,25 +422,24 @@ await recording.stop();
 
 ---
 
-### Os 13 Submódulos Especializados
+### Os 12 Submódulos Especializados
 
-O `WaClient` divide as operações em 13 módulos focados, acessíveis diretamente na instância:
+O WaClient divide as operações em 12 módulos focados, acessíveis diretamente na instância (consulte o [Guia Completo da Abstração](./docs/CLIENT_GUIDE.md) para a documentação detalhada de cada método):
 
 | Submódulo | Acesso | Descrição e Principais Métodos |
 | :--- | :--- | :--- |
-| **Mensagens** | `client.messages` | Envio inteligente com validação `isOnWhatsApp`, textos, mídias, álbuns (`sendAlbum`), enquetes (`sendPoll`), vCards (`sendContacts`), reações e encaminhamento. |
-| **Grupos** | `client.groups` | Criar grupos, adicionar/remover membros, promover/rebaixar admins, convites, permissões de grupo e menção em massa (`mentionAll`). |
-| **Canais / Newsletters** | `client.channels` | Criação e gestão de Newsletters v2, busca por código de convite ou JID, seguir, deixar de seguir, silenciar e buscar reações. |
-| **Privacidade** | `client.privacy` | Bloquear/desbloquear contatos, gerenciar lista de bloqueio (`getBlocklist`) e configurar privacidade de Visto por Último, Online, Foto e Recado. |
-| **Perfil** | `client.profile` | Atualizar nome de exibição (`updateName`), recado/status (`updateStatus`), foto de perfil (`updatePicture`) e obter foto em alta resolução. |
-| **Chats** | `client.chat` | Fixar conversas no topo (`pin`/`unpin`), silenciar (`mute`/`unmute`), arquivar (`archive`/`unarchive`), limpar e excluir histórico. |
-| **Presença** | `client.presence` | `startTyping()`, `startRecording()`, marcar conta como online/offline e assinar atualizações de presença de contatos específicos. |
-| **Status / Stories** | `client.stories` | Publicar Status em texto, imagem, áudio ou vídeo, com suporte a menções direcionadas (`statusJidList`) ou broadcast público. |
-| **WhatsApp Business** | `client.business` | Gestão de catálogo comercial, cadastro de produtos (`createProduct`), coleções, perfil da empresa e detalhes de pedidos (`getOrderDetails`). |
-| **Etiquetas / Labels** | `client.labels` | CRUD completo de etiquetas do WhatsApp Business, associação de etiquetas a chats e mensagens específicas. |
-| **Comunidades** | `client.communities` | Criação de comunidades, vinculação de subgrupos (`addSubgroups`), remoção e gestão do grupo de avisos gerais. |
-| **Usuários** | `client.users` | Verificação de existência no WhatsApp (`isOnWhatsApp`), metadados, busca de perfil comercial e resolução reversa de LID para PN (`getPnForLid`). |
-| **Contatos** | `client.contacts` | Cache unificado de contatos em memória com resolução profunda assíncrona de informações completas (`fetchDeep`). |
+| **Mensagens** | client.messages | Envio inteligente com validação isOnWhatsApp, textos, mídias, álbuns (sendAlbum), enquetes, vCards, localizações, reações e encaminhamento. |
+| **VoIP / Chamadas** | client.voip | Chamadas ativas de voz e vídeo (call/callVideo), controle de chamada em andamento (ctiveCall), atender e rejeitar. |
+| **Grupos** | client.groups | Criar grupos, adicionar/remover membros, promover/rebaixar admins, convites, permissões de grupo e menção em massa (mentionAll). |
+| **Canais / Newsletters** | client.channels | Criação e gestão de Newsletters v2, seguir, deixar de seguir, silenciar, listar inscritos (listSubscribed) e buscar reações. |
+| **WhatsApp Business** | client.business | Gestão de catálogo comercial, cadastro de produtos (createProduct), coleções, perfil da empresa e detalhes de pedidos (getOrderDetails). |
+| **Comunidades** | client.communities | Criação de comunidades, vinculação de subgrupos (createSubgroup/linkSubgroup), desvinculação e gestão de subgrupos. |
+| **Etiquetas / Labels** | client.labels | CRUD completo de etiquetas do WhatsApp Business, associação de etiquetas a chats e mensagens específicas. |
+| **Presença** | client.presence | startTyping(), startRecording(), marcar conta como online/offline e assinar atualizações de presença de contatos específicos. |
+| **Perfil** | client.profile | Atualizar nome de exibição (updateName), recado/status (updateAbout), foto de perfil (updatePicture com TC Token) e obter foto em alta resolução. |
+| **Privacidade** | client.privacy | Bloquear/desbloquear contatos, gerenciar lista de bloqueio (getBlocklist) e configurar privacidade de Visto por Último, Online, Foto e Recado. |
+| **Usuários** | client.users | Verificação de existência no WhatsApp (isOnWhatsApp), perfil comercial e resolução bidirecional de LID para PN (getPnForLid/getLidForPn). |
+| **Chats** | client.chat | Fixar conversas no topo (pin/unpin), silenciar (mute/unmute), arquivar (rchive/unarchive), favoritos e anotações privadas de contato. |
 
 ---
 
