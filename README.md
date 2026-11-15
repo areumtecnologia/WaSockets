@@ -288,22 +288,37 @@ await ctx.unstar();
 ```
 
 #### Utilitários de Mídia (`MediaObject`):
-Se a mensagem contiver imagem, vídeo, áudio ou documento, `ctx.media` fornece métodos instantâneos:
+Se a mensagem contiver imagem, vídeo, áudio, figurinha ou documento, `ctx.media` centraliza todos os metadados e métodos de manipulação em uma única instância:
 
+##### Propriedades de `ctx.media`:
+- `ctx.media.mimetype`: Tipo MIME real (ex: `'image/jpeg'`, `'audio/ogg; codecs=opus'`).
+- `ctx.media.extension`: Extensão inferida do arquivo (ex: `'jpg'`, `'ogg'`, `'pdf'`, `'mp4'`).
+- `ctx.media.fileLength`: Tamanho do arquivo em bytes.
+- `ctx.media.fileName`: Nome original do arquivo (se enviado como documento).
+- `ctx.media.caption`: Legenda de texto anexada à mídia.
+- `ctx.media.seconds` / `duration`: Duração em segundos (para áudios e vídeos).
+- `ctx.media.isVoice` / `isPtt`: Booleano se é áudio gravado no WhatsApp (Push-To-Talk).
+- `ctx.media.isGif`: Booleano se é vídeo reproduzido como GIF animado.
+- `ctx.media.isViewOnce`: Booleano se é mídia de visualização única.
+
+##### Métodos de `ctx.media`:
 ```javascript
 if (ctx.media) {
-    // 1. Salva diretamente em disco
+    // 1. Salva diretamente em disco (cria diretórios se não existirem)
     await ctx.media.save('./pasta/comprovante.pdf');
 
-    // 2. Converte para Base64 (ideal para enviar para APIs de IA ou frontend)
-    const base64 = ctx.media.toBase64();
-    const dataUri = ctx.media.toDataUri(); // 'data:image/jpeg;base64,...'
+    // 2. Obtém como Buffer em memória (com cache automático)
+    const buffer = await ctx.media.toBuffer();
 
-    // 3. Obtém como Stream legível (Node Readable)
-    const stream = ctx.media.toStream();
+    // 3. Converte para Base64 (ideal para LLMs como Gemini / OpenAI)
+    const base64 = await ctx.media.toBase64();
+    const dataUri = await ctx.media.toDataUri(); // 'data:image/jpeg;base64,...'
 
-    // 4. Integração nativa com Sharp (se instalado) para redimensionamento/corte
-    const sharpInstance = ctx.media.toSharp();
+    // 4. Obtém como Stream legível (Node Readable)
+    const stream = await ctx.media.toStream();
+
+    // 5. Integração nativa com Sharp (se instalado) para recorte/redimensionamento
+    const sharpInstance = await ctx.media.toSharp();
 }
 ```
 
