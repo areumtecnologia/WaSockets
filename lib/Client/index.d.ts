@@ -92,13 +92,66 @@ export declare class CallContext {
     playAudio(audioPathOrBuffer: string | Buffer): Promise<any>
 }
 
+export interface InteractiveReplyData {
+    id: string
+    text: string
+    params?: any
+    flowName?: string
+    description?: string
+    type: 'button' | 'list' | 'native_flow' | 'template_button' | 'question_reply' | string
+}
+
+export interface ContactData {
+    name: string
+    number: string
+    org?: string
+    vcard: string
+}
+
+export interface LocationData {
+    latitude: number
+    longitude: number
+    name: string
+    address: string
+    url: string
+    accuracyInMeters?: number
+    speedInMps?: number
+    isLive: boolean
+}
+
+export interface ReactionData {
+    emoji: string
+    reactedMessageId: string
+    targetKey: any
+    isRemoval: boolean
+    senderTimestamp: Date
+}
+
+export interface PollData {
+    id: string
+    name: string
+    selectableOptionsCount: number
+    allowsMultipleAnswers: boolean
+    options: Array<{ name: string; hash: string | null }>
+}
+
+export interface MediaDetailsData {
+    mimetype: string
+    fileName: string
+    caption: string
+    duration: number | null
+    isPtt: boolean
+    isGif: boolean
+    isViewOnce: boolean
+}
+
 export interface QuotedMessageContext {
     id: string
     sender: string
     senderNumber: string
     type: string
     body: string
-    raw: proto.IMessage
+    raw: proto.IMessage | any
 }
 
 export declare class MessageContext {
@@ -106,24 +159,48 @@ export declare class MessageContext {
     raw: proto.IWebMessageInfo
     id: string
     chatId: string
+    fromMe: boolean
     isFromMe: boolean
     isGroup: boolean
     isChannel: boolean
     isBroadcast: boolean
+
+    from: string
+    to: string
+    fromPushName: string
+    fromNumber: string
     sender: string
     senderNumber: string
     senderName: string
+
+    timestamp: Date
+    isEdited: boolean
+    editTimestamp: Date | null
+
     type: string
     body: string
+    interactiveReply: InteractiveReplyData | null
+    contacts: ContactData[]
+    location: LocationData | null
+    reaction: ReactionData | null
+    poll: PollData | null
+
     mediaNode: any | null
     hasMedia: boolean
     media: MediaObject | null
-    timestamp: number
-    contextInfo: proto.IContextInfo | null
-    mentionedJids: string[]
-    quoted: QuotedMessageContext | null
+    mediaDetails: MediaDetailsData | null
 
-    constructor(client: WaClient, rawMessage: proto.IWebMessageInfo)
+    contextInfo: proto.IContextInfo | null
+    mentions: string[]
+    mentionedJids: string[]
+    isForwarded: boolean
+    forwardingScore: number
+    isMentioningMe: boolean
+
+    isReply: boolean
+    quoted: MessageContext | QuotedMessageContext | null
+
+    constructor(client: WaClient, rawMessage: proto.IWebMessageInfo, depth?: number)
 
     reply(content: string | AnyMessageContent, options?: MiscMessageGenerationOptions): Promise<proto.WebMessageInfo | undefined>
     react(emoji: string): Promise<proto.WebMessageInfo | undefined>
@@ -397,7 +474,13 @@ export declare class MessageNormalizer {
     static unwrapMessage(rawMessageContent: any): any
     static extractType(messageContent: any): string
     static extractBody(messageContent: any): string
+    static extractInteractiveReply(messageContent: any): InteractiveReplyData | null
+    static extractContacts(messageContent: any): ContactData[]
+    static extractLocation(messageContent: any): LocationData | null
+    static extractReaction(messageContent: any): ReactionData | null
+    static extractPollCreation(messageContent: any, rawMessage?: any): PollData | null
     static extractMediaNode(messageContent: any): any | null
+    static extractMediaDetails(messageContent: any): MediaDetailsData | null
     static extractContextInfo(messageContent: any): proto.IContextInfo | null
 }
 

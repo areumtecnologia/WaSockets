@@ -224,18 +224,33 @@ client.on(Events.LABELS_UPDATE, (labels) => { /* Criação ou associação de et
 Ao escutar `Events.MESSAGE_RECEIVED`, você recebe um objeto `ctx` que já contém todos os dados mastigados e métodos de ação vinculados diretamente àquela mensagem:
 
 #### Propriedades de `ctx`:
-- `ctx.id`: ID único da mensagem.
+- `ctx.id`: ID único da mensagem (se for mensagem editada, preserva o ID original rastreável).
 - `ctx.chatId`: JID do chat (usuário, grupo ou canal).
-- `ctx.sender`: JID de quem enviou.
-- `ctx.senderNumber`: Apenas os números de telefone do remetente (sem `@s.whatsapp.net`).
-- `ctx.senderName`: Nome formatado (nome salvo, apelido comercial ou pushName).
+- `ctx.fromMe` / `ctx.isFromMe`: Booleano se a mensagem foi enviada pelo próprio bot.
+- `ctx.from`: JID de origem (remetente em recebidas, ou JID do bot em enviadas).
+- `ctx.to`: JID de destino (bot em recebidas, ou JID do chat/destinatário em enviadas).
+- `ctx.fromPushName` / `ctx.senderName`: Nome de exibição formatado ou pushName ('Você' se `fromMe`).
+- `ctx.fromNumber` / `ctx.senderNumber`: Apenas os números de telefone do remetente (sem sufixos ou `@s.whatsapp.net`).
+- `ctx.sender`: JID de quem enviou a mensagem no chat.
 - `ctx.isGroup`: Booleano indicando se é grupo (`@g.us`).
 - `ctx.isChannel`: Booleano indicando se é newsletter/canal (`@newsletter`).
-- `ctx.isFromMe`: Booleano se a mensagem foi enviada pelo próprio bot.
-- `ctx.body`: Texto principal da mensagem (já decodificado de texto, legenda, botão ou lista).
-- `ctx.type`: Tipo normalizado (`text`, `image`, `video`, `audio`, `document`, `sticker`, `poll`, etc.).
-- `ctx.media`: Instância de `MediaObject` (se houver mídia na mensagem).
-- `ctx.quoted`: Instância recursiva de `MessageContext` para a mensagem que foi citada/respondida.
+- `ctx.isBroadcast`: Booleano se é lista de transmissão ou status.
+- `ctx.body`: Texto principal da mensagem (já desempacotado recursivamente de `viewOnce`, `ephemeral`, botões, listas, etc.).
+- `ctx.type`: Tipo normalizado e amigável (28 tipos identificados: `text`, `image`, `video`, `voice`, `document`, `sticker`, `native_flow_response`, `poll_creation`, `event`, etc.).
+- `ctx.isEdited`: Booleano indicando se a mensagem é uma edição de mensagem prévia (`protocolMessage.editedMessage`).
+- `ctx.editTimestamp`: Instância de `Date` informando quando a mensagem foi editada (ou `null`).
+- `ctx.interactiveReply`: Resposta estruturada de botões, listas e fluxos nativos (`{ id, text, params, flowName, type }`).
+- `ctx.contacts`: Array com contatos e vCards parseados (`[{ name, number, org, vcard }]`), com suporte a `waid` e fallback `TEL`.
+- `ctx.location`: Coordenadas e endereço (`{ latitude, longitude, name, address, url, isLive }`).
+- `ctx.reaction`: Detalhes de reação (`{ emoji, reactedMessageId, targetKey, isRemoval, senderTimestamp }`).
+- `ctx.poll`: Dados completos de enquetes (`{ name, options, selectableOptionsCount, allowsMultipleAnswers }`).
+- `ctx.mediaDetails`: Metadados da mídia (`{ mimetype, fileName, caption, duration, isPtt, isGif, isViewOnce }`).
+- `ctx.media`: Instância de `MediaObject` para conversão rápida para buffer, base64, salvamento em disco ou Sharp.
+- `ctx.isMentioningMe`: Booleano indicando se o bot foi mencionado diretamente no texto (suporta Phone JID e LID JID).
+- `ctx.mentions` / `ctx.mentionedJids`: Array de JIDs mencionados na mensagem.
+- `ctx.isForwarded` & `ctx.forwardingScore`: Rastreamento de encaminhamento.
+- `ctx.isReply`: Booleano indicando se esta mensagem está citando outra.
+- `ctx.quoted`: Instância recursiva de `MessageContext` da mensagem citada/respondida (com controle de profundidade).
 - `ctx.raw`: O nó bruto original do WhatsApp/Baileys para casos de baixo nível.
 
 #### Ações Disponíveis em `ctx`:
