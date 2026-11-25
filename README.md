@@ -26,6 +26,9 @@ O **WaSockets** foi criado para resolver problemas crônicos de estabilidade e a
 | :--- | :--- | :--- |
 | **Criptografia & Sessão** | Correção de descriptografia em grupos (`pn/lid mismatch`) | Corrige a falha crítica que impedia a descriptografia correta de mensagens quando a identidade de um participante alternava entre o número de telefone (PN) e o ID interno (LID). |
 | **Criptografia & Sessão** | Descriptografia robusta de Enquetes/Eventos | Resolve o erro AES-GCM `Unsupported state or unable to authenticate data` garantindo que o autor original seja extraído do objeto de mensagem persistido. |
+| **Arquitetura & Performance** | Substituição Definitiva do UnityChat | Drop-in replacement transparente do @areumtecnologia/unitychat na abstração WaClient: suporta todos os 25+ eventos legados com despacho zero-overhead, aliases em todos os managers e método itsMe(). |
+| **Arquitetura & Performance** | ContactManager com Cache LRU Reativo | Elimina o gargalo crítico do UnityChat (que fazia 4 chamadas de rede bloqueantes por mensagem recebida). Normalização instantânea de contatos (1)$ sem congelamento de event loop. |
+| **Arquitetura & Performance** | StorageAdapter & HistoryEngine Cooperativo | Armazenamento modular (MemoryStorageAdapter e FileStorageAdapter atômico) e sincronização de histórico não-bloqueante em batches de 50 via setImmediate, com injeção automática de getMessage para decodificação perfeita. |
 | **Estabilidade** | Versão Web Estabilizada | Integração com o protocolo Web `v2.3000.1038819500` e restauração da função `fetchLatestWaWebVersion` para buscar sempre a versão de compatibilidade mais recente e funcional do WhatsApp. |
 | **Eventos** | Buffer de Eventos Corrigido | Adicionada a propriedade `shouldIncrementChatUnread` no buffer de eventos para garantir um controle preciso e confiável de mensagens não lidas no chat. |
 | **Segurança** | Sessões de Autenticação Seguras | Remoção de adaptadores de autenticação inseguros/obsoletos (arquivo único ou MongoDB que causavam corrupção de estado), unificando e otimizando o uso do `useMultiFileAuthState`. |
@@ -59,7 +62,7 @@ O **WaSockets** foi criado para resolver problemas crônicos de estabilidade e a
   - [O Contexto de Mensagem (MessageContext / ctx)](#o-contexto-de-mensagem-messagecontext--ctx)
   - [Builders de Botões Interativos (InteractiveMessage)](#builders-de-botões-interativos-interactivemessage)
   - [Controle de Presença Fluente (Typing / Recording)](#controle-de-presença-fluente-typing--recording)
-  - [Os 12 Submódulos Especializados](#os-12-submódulos-especializados)
+  - [Os 13 Submódulos Especializados](#os-12-submódulos-especializados)
   - [Guia Detalhado da Abstração (docs/CLIENT_GUIDE.md)](./docs/CLIENT_GUIDE.md)
   - [Opções de Configuração (WaClientOptions)](#opções-de-configuração-waclientoptions)
 - [Instalação](#-instalação)
@@ -518,7 +521,7 @@ await recording.stop();
 
 ### Os 12 Submódulos Especializados
 
-O WaClient divide as operações em 12 módulos focados, acessíveis diretamente na instância (consulte o [Guia Completo da Abstração](./docs/CLIENT_GUIDE.md) para a documentação detalhada de cada método):
+O WaClient divide as operações em 13 módulos focados, acessíveis diretamente na instância (consulte o [Guia Completo da Abstração](./docs/CLIENT_GUIDE.md) para a documentação detalhada de cada método):
 
 | Submódulo | Acesso | Descrição e Principais Métodos |
 | :--- | :--- | :--- |
@@ -533,7 +536,9 @@ O WaClient divide as operações em 12 módulos focados, acessíveis diretamente
 | **Perfil** | client.profile | Atualizar nome de exibição (updateName), recado/status (updateAbout), foto de perfil (updatePicture com TC Token) e obter foto em alta resolução. |
 | **Privacidade** | client.privacy | Bloquear/desbloquear contatos, gerenciar lista de bloqueio (getBlocklist) e configurar privacidade de Visto por Último, Online, Foto e Recado. |
 | **Usuários** | client.users | Verificação de existência no WhatsApp (isOnWhatsApp), perfil comercial e resolução bidirecional de LID para PN (getPnForLid/getLidForPn). |
-| **Chats** | client.chat | Fixar conversas no topo (pin/unpin), silenciar (mute/unmute), arquivar (rchive/unarchive), favoritos e anotações privadas de contato. |
+| **Chats** | client.chat | Fixar conversas no topo (pin/unpin), silenciar (mute/unmute), arquivar (archive/unarchive), favoritos e anotações privadas de contato. |
+| **Contatos** | client.contacts | Cache LRU de contatos em memória (1)$, normalização sem I/O de rede bloqueante, enriquecimento sob demanda e mapeamento reverso LID ↔ PN. |
+| **Armazenamento** | client.store | Armazenamento modular de mensagens (Memory/File), HistoryEngine cooperativo não-bloqueante e injeção automática para decodificação de enquetes e mensagens citadas. |
 
 ---
 

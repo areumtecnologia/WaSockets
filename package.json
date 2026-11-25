@@ -1,7 +1,7 @@
 {
   "name": "@areumtecnologia/wasockets",
-  "version": "2.3.6",
-  "whatsappVersion": "2.3000.1054715376",
+  "version": "2.3.7",
+  "whatsappVersion": "2.3000.1056257420",
   "description": "Communication Library By areumtecnologia",
   "keywords": [],
   "homepage": "https://github.com/areumtecnologia/WaSockets",
@@ -42,7 +42,9 @@
     "lint:fix": "eslint lib --fix",
     "preinstall": "node ./engine-requirements.js",
     "release": "release-it",
-    "test": "jest --passWithNoTests"
+    "test": "jest --passWithNoTests",
+    "proto": "node tests/proto/index.js",
+    "proto:clean": "node -e \"const fs = require('fs'); fs.rmSync('tests/proto/.session', { recursive: true, force: true }); console.log('Sessao do prototipo limpa com sucesso!');\""
   },
   "dependencies": {
     "@adiwajshing/keyed-db": "^0.2.4",
